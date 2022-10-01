@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS greece_geo_info;
