@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"log"
 
-	"covid-data-transformation/pkg/env"
-
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	"covid19-greece-api/pkg/env"
 )
 
 func InitPostgresDb(ctx context.Context) (*pgxpool.Pool, error) {
