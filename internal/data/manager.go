@@ -10,8 +10,8 @@ import (
 	"github.com/gosimple/slug"
 	"github.com/jackc/pgx/v4/pgxpool"
 
-	"covid-data-transformation/pkg/file"
-	"covid-data-transformation/pkg/vartypes"
+	"covid19-greece-api/pkg/file"
+	"covid19-greece-api/pkg/vartypes"
 )
 
 const (
@@ -63,6 +63,22 @@ func NewManager(
 		casesCsvUrl:    casesCsvUrl,
 		timelineCsvUrl: timelineCsvUrl,
 	}, nil
+}
+
+func (m *Manager) PopulateEverything(ctx context.Context) error {
+	if err := m.PopulateGeo(ctx); err != nil {
+		return fmt.Errorf("error populating geo: %s", err)
+	}
+
+	if err := m.PopulateCases(ctx); err != nil {
+		return fmt.Errorf("error populating cases per prefecture: %s", err)
+	}
+
+	if err := m.PopulateTimeline(ctx); err != nil {
+		return fmt.Errorf("error populating timeline: %s", err)
+	}
+
+	return nil
 }
 
 func (m *Manager) PopulateGeo(ctx context.Context) error {

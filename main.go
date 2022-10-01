@@ -2,15 +2,12 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"time"
 
 	"covid19-greece-api/internal/data"
 	"covid19-greece-api/pkg/db"
 	"covid19-greece-api/pkg/env"
-
-	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
 const (
@@ -19,14 +16,6 @@ const (
 )
 
 func main() {
-	var skipGeo, skipCases, skipTimeline bool
-	flag.BoolVar(&skipGeo, "skipGeo", false, "skips populating greece_geo_info table")
-	flag.BoolVar(&skipCases, "skipCases", false, "skips populating cases_per_prefecture table")
-	flag.BoolVar(&skipTimeline, "skipTimeline", false, "skips populating greece_timeline table")
-	flag.Parse()
-
-	start := time.Now()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -43,23 +32,21 @@ func main() {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
-	if !skipGeo {
-		if err := dataManager.PopulateGeo(ctx); err != nil {
-			log.Fatal(err)
-		}
-	}
+	ticker := time.NewTicker(24 * time.Hour) // every day
+	done := make(chan bool)
 
-	if !skipCases {
-		if err := dataManager.PopulateCases(ctx); err != nil {
-			log.Fatal(err)
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				if err := dataManager.PopulateEverything(ctx); err != nil {
+					log.Printf("ERROR: database population failed: %s", err)
+				}
+			}
 		}
-	}
+	}()
 
-	if !skipTimeline {
-		if err := dataManager.PopulateTimeline(ctx); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	log.Printf("Finished after %v", time.Since(start))
+	select {}
 }
