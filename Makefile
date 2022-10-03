@@ -2,6 +2,10 @@
 MIGRATE := docker run --rm -v $(shell pwd)/migrations:/migrations --network host --user $(id -u):$(id -g) migrate/migrate -path=/migrations/ -database 'postgres://127.0.0.1:5433/covid19?sslmode=disable&user=admin&password=password'
 MIGRATE_CREATE := docker run --rm -v $(shell pwd)/migrations:/migrations --network host --user $(shell id -u):$(shell id -g) migrate/migrate create --seq -ext sql -dir /migrations/
 
+.PHONY: build
+build:
+	CGO_ENABLED=0 go build -ldflags='-w -s -extldflags "-static"' -o covid19-greece-api main.go
+
 .PHONY: populate-db
 populate-db: ## populate the database
 	go run cmd/populate-db/main.go
