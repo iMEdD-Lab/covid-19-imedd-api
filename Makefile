@@ -39,3 +39,12 @@ migrate-down: ## revert database to the last migration step
 migrate-new: ## create a new database migration
 	@read -p "Enter the name of the new migration: " name; \
 	$(MIGRATE_CREATE) $${name}
+
+.PHONY: test
+test:
+	go test ./...
+
+.PHONY: mocks
+mocks:
+	mockgen -destination internal/data/repo_mock.go -package data -source internal/data/repo.go -mock_names Repo=RepoMock && \
+	echo "mocks generated successfully"

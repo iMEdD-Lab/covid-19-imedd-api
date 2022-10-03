@@ -1,0 +1,23 @@
+Status,Province/State,Country/Region,2/26/20,2/27/20,2/28/20
+cases,Greece,Greece,1,23,45
+new_reinfections,Greece,Greece,2,24,46
+total_reinfections,Greece,Greece,3,25,47
+deaths,Greece,Greece,4,26,48
+deaths_cum,Greece,Greece,5,27,49
+recovered,Greece,Greece,6,28,50
+hospitalized,Greece,Greece,7,29,51
+hospital_admissions,Greece,Greece,8,30,52
+hospital_discharges,Greece,Greece,9,31,53
+intensive_care,Greece,Greece,10,32,54
+icu_discharges,,,11,33,55
+intubated,Greece,Greece,12,34,56
+intubated_unvac,,,13,35,57
+intubated_vac,,,14,36,58
+icu_occupancy,Greece,Greece,15,37,59
+beds_occupancy,Greece,Greece,16,38,60
+cumulative_rtpcr_tests_raw,Greece,Greece,17,39,61
+estimated_new_rtpcr_tests,Greece,Greece,18,40,62
+cumulative_rapid_tests_raw,Greece,Greece,19,41,63
+esitmated_new_rapid_tests,Greece,Greece,20,42,64
+estimated_new_total_tests,Greece,Greece,21,43,65
+total cases,Greece,Greece,22,44,66
