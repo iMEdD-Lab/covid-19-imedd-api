@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"covid19-greece-api/internal/api"
 	"covid19-greece-api/internal/data"
 	"covid19-greece-api/pkg/db"
 	"covid19-greece-api/pkg/env"
@@ -50,5 +51,8 @@ func main() {
 		}()
 	}
 
-	select {}
+	app := api.NewApi()
+	if err := app.Serve(); err != nil {
+		log.Fatal(err)
+	}
 }

@@ -3,6 +3,7 @@ module covid19-greece-api
 go 1.19
 
 require (
+	github.com/go-chi/chi v1.5.4
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/golang/mock v1.6.0
 	github.com/gosimple/slug v1.13.0
