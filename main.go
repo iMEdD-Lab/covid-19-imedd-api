@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"flag"
 	"log"
 	"time"
 
@@ -18,10 +17,6 @@ const (
 )
 
 func main() {
-	var skipDb bool
-	flag.BoolVar(&skipDb, "skipDb", false, "if true, skip db population")
-	flag.Parse()
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -40,7 +35,7 @@ func main() {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
-	if !skipDb {
+	if env.BoolEnvOrDefault("POPULATE_DB", false) {
 		ticker := time.NewTicker(24 * time.Hour) // every day
 		go func() {
 			for ; true; <-ticker.C {
@@ -55,4 +50,6 @@ func main() {
 	if err := app.Serve(); err != nil {
 		log.Fatal(err)
 	}
+
+	// todo add graceful stop
 }
