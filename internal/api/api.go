@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strings"
 
+	"covid19-greece-api/internal/data"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
@@ -13,15 +15,18 @@ import (
 )
 
 type Api struct {
-	Router *chi.Mux
+	router *chi.Mux
+	repo   data.Repo
 }
 
 // todo add rate limiter
 // todo add cache
 // todo add authentication
 
-func NewApi() *Api {
-	api := Api{}
+func NewApi(repo data.Repo) *Api {
+	api := Api{
+		repo: repo,
+	}
 	api.instantiateRouter()
 
 	return &api
@@ -31,7 +36,7 @@ func (a *Api) Serve() error {
 	listenAddr := env.EnvOrDefault("PORT", ":12122")
 	log.Printf("Covid 19 GR API started. Listening on %s\n", listenAddr)
 
-	return http.ListenAndServe(listenAddr, a.Router)
+	return http.ListenAndServe(listenAddr, a.router)
 }
 
 func (a *Api) instantiateRouter() {
@@ -55,9 +60,18 @@ func (a *Api) instantiateRouter() {
 			w.Write([]byte("hello friend, you are authenticated!"))
 			w.WriteHeader(http.StatusOK)
 		})
+
+		r.Get("/geo-info", func(w http.ResponseWriter, r *http.Request) {
+			info, err := a.repo.GetGeoInfo(r.Context())
+			if err != nil {
+				renderJson(w, r, http.StatusInternalServerError, nil)
+				return
+			}
+			renderJson(w, r, http.StatusOK, info)
+		})
 	})
 
-	a.Router = r
+	a.router = r
 }
 
 func (a *Api) authenticationMw(next http.Handler) http.Handler {

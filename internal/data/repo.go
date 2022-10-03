@@ -12,6 +12,7 @@ type Repo interface {
 	AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
 	AddGeoRow(ctx context.Context, geoInfo GeoInfo) error
+	GetGeoInfo(ctx context.Context) ([]GeoInfo, error)
 }
 
 type PgRepo struct {
@@ -58,4 +59,24 @@ func (r *PgRepo) AddGeoRow(ctx context.Context, geoInfo GeoInfo) error {
 	}
 
 	return nil
+}
+
+func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
+	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from greece_geo_info`
+	rows, err := r.conn.Query(ctx, sql)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Geo Info: %s", err)
+	}
+
+	var res []GeoInfo
+	for rows.Next() {
+		var g GeoInfo
+		if err := rows.Scan(&g.Id, &g.Slug, &g.Department, &g.Prefecture,
+			&g.CountyNormalized, &g.County, &g.Pop11); err != nil {
+			return nil, fmt.Errorf("could not scan Geo Info row: %s", err)
+		}
+		res = append(res, g)
+	}
+
+	return res, nil
 }

@@ -45,6 +45,7 @@ type FullInfo struct {
 }
 
 type GeoInfo struct {
+	Id               int    `json:"id"`
 	Slug             string `json:"slug"`
 	Department       string `json:"department"`
 	Prefecture       string `json:"prefecture"`

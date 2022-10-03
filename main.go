@@ -46,7 +46,7 @@ func main() {
 		}()
 	}
 
-	app := api.NewApi()
+	app := api.NewApi(repo)
 	if err := app.Serve(); err != nil {
 		log.Fatal(err)
 	}
