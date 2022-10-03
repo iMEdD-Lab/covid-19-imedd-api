@@ -4,14 +4,16 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"net/url"
 	"strings"
-
-	"covid19-greece-api/internal/data"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 
+	"covid19-greece-api/internal/data"
 	"covid19-greece-api/pkg/env"
+	"covid19-greece-api/pkg/vartypes"
 )
 
 type Api struct {
@@ -69,9 +71,35 @@ func (a *Api) instantiateRouter() {
 			}
 			renderJson(w, r, http.StatusOK, info)
 		})
+
+		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
+			filter := casesFilter(r.URL.Query())
+			cases, err := a.repo.GetCases(r.Context(), filter)
+			if err != nil {
+				renderJson(w, r, http.StatusInternalServerError, nil)
+				return
+			}
+			renderJson(w, r, http.StatusOK, cases)
+		})
 	})
 
 	a.router = r
+}
+
+func casesFilter(values url.Values) data.CasesFilter {
+	f := data.CasesFilter{}
+	for k, v := range values {
+		switch k {
+		case "geo_id":
+			f.GeoId = vartypes.StringToInt(v[0])
+		case "end_date":
+			f.EndDate, _ = time.Parse("2006-01-02", v[0])
+		case "start_date":
+			f.StartDate, _ = time.Parse("2006-01-02", v[0])
+		}
+	}
+
+	return f
 }
 
 func (a *Api) authenticationMw(next http.Handler) http.Handler {

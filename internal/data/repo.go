@@ -13,6 +13,13 @@ type Repo interface {
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
 	AddGeoRow(ctx context.Context, geoInfo GeoInfo) error
 	GetGeoInfo(ctx context.Context) ([]GeoInfo, error)
+	GetCases(ctx context.Context, filter CasesFilter) ([]Case, error)
+}
+
+type CasesFilter struct {
+	GeoId     int
+	StartDate time.Time
+	EndDate   time.Time
 }
 
 type PgRepo struct {
@@ -76,6 +83,52 @@ func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
 			return nil, fmt.Errorf("could not scan Geo Info row: %s", err)
 		}
 		res = append(res, g)
+	}
+
+	return res, nil
+}
+
+type Case struct {
+	GeoId int
+	Date  time.Time
+	Cases int
+}
+
+func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, error) {
+	sql := `SELECT geo_id,date,cases FROM cases_per_prefecture WHERE 1=1 `
+	counter := 1
+	var args []interface{}
+
+	if filter.GeoId > 0 {
+		sql += fmt.Sprintf(" AND geo_id=$%d ", counter)
+		counter++
+		args = append(args, filter.GeoId)
+	}
+
+	if !filter.StartDate.IsZero() {
+		sql += fmt.Sprintf(" AND date >= $%d ", counter)
+		counter++
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		sql += fmt.Sprintf(" AND date <= $%d ", counter)
+		counter++
+		args = append(args, filter.EndDate)
+	}
+
+	rows, err := r.conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("could not get Geo Info: %s", err)
+	}
+
+	var res []Case
+	for rows.Next() {
+		var c Case
+		if err := rows.Scan(&c.GeoId, &c.Date, &c.Cases); err != nil {
+			return nil, fmt.Errorf("could not scan cases row: %s", err)
+		}
+		res = append(res, c)
 	}
 
 	return res, nil
