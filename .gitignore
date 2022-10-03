@@ -1,5 +1,7 @@
 test-cmd
 covid-19-api-old
 .idea
-*.csv
+greece_cases_v2.csv
+greeceTimeline.csv
 testdata
+covid19-greece-api
