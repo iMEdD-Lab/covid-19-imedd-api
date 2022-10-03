@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gosimple/slug"
-	"github.com/jackc/pgx/v4/pgxpool"
 
 	"covid19-greece-api/pkg/file"
 	"covid19-greece-api/pkg/vartypes"
@@ -19,10 +18,11 @@ const (
 	simpleDateLayout = "2006-01-02"
 )
 
-type Manager struct {
-	conn           *pgxpool.Pool
-	casesCsvUrl    string
-	timelineCsvUrl string
+type Service struct {
+	repo              Repo
+	casesCsvSource    string
+	timelineCsvSource string
+	fromFiles         bool
 }
 
 type FullInfo struct {
@@ -53,36 +53,40 @@ type GeoInfo struct {
 	Pop11            int    `json:"pop_11"`
 }
 
-func NewManager(
-	conn *pgxpool.Pool,
-	casesCsvUrl string,
-	timelineCsvUrl string,
-) (*Manager, error) {
-	return &Manager{
-		conn:           conn,
-		casesCsvUrl:    casesCsvUrl,
-		timelineCsvUrl: timelineCsvUrl,
+func NewService(
+	repo Repo,
+	casesGetSource string,
+	timelineGetSource string,
+	fromFiles bool,
+) (*Service, error) {
+	return &Service{
+		repo:              repo,
+		casesCsvSource:    casesGetSource,
+		timelineCsvSource: timelineGetSource,
+		fromFiles:         fromFiles,
 	}, nil
 }
 
-func (m *Manager) PopulateEverything(ctx context.Context) error {
-	if err := m.PopulateGeo(ctx); err != nil {
+func (s *Service) PopulateEverything(ctx context.Context) error {
+	if err := s.PopulateGeo(ctx); err != nil {
 		return fmt.Errorf("error populating geo: %s", err)
 	}
 
-	if err := m.PopulateCases(ctx); err != nil {
+	if err := s.PopulateCases(ctx); err != nil {
 		return fmt.Errorf("error populating cases per prefecture: %s", err)
 	}
 
-	if err := m.PopulateTimeline(ctx); err != nil {
+	if err := s.PopulateTimeline(ctx); err != nil {
 		return fmt.Errorf("error populating timeline: %s", err)
 	}
+
+	log.Println("database populated successfully")
 
 	return nil
 }
 
-func (m *Manager) PopulateGeo(ctx context.Context) error {
-	data, err := file.ReadCSVFromUrl(m.casesCsvUrl)
+func (s *Service) PopulateGeo(ctx context.Context) error {
+	data, err := file.ReadCsv(s.casesCsvSource, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
@@ -99,7 +103,7 @@ func (m *Manager) PopulateGeo(ctx context.Context) error {
 	}
 
 	for _, row := range data[1:] {
-		err := m.addGeoRow(ctx, GeoInfo{
+		err := s.repo.AddGeoRow(ctx, GeoInfo{
 			Slug:             slug.Make(row[2]),
 			Department:       row[0],
 			Prefecture:       row[1],
@@ -117,8 +121,8 @@ func (m *Manager) PopulateGeo(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) PopulateCases(ctx context.Context) error {
-	data, err := file.ReadCSVFromUrl(m.casesCsvUrl)
+func (s *Service) PopulateCases(ctx context.Context) error {
+	data, err := file.ReadCsv(s.casesCsvSource, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
@@ -160,7 +164,7 @@ func (m *Manager) PopulateCases(ctx context.Context) error {
 				}
 			}
 			sl := slug.Make(row[2])
-			if err := m.addCase(ctx, date, amount, sl); err != nil {
+			if err := s.repo.AddCase(ctx, date, amount, sl); err != nil {
 				log.Fatalf("Error adding death day: %v", err)
 			}
 
@@ -171,14 +175,14 @@ func (m *Manager) PopulateCases(ctx context.Context) error {
 	return nil
 }
 
-func (m *Manager) PopulateTimeline(ctx context.Context) error {
-	data, err := file.ReadCSVFromUrl(m.timelineCsvUrl)
+func (s *Service) PopulateTimeline(ctx context.Context) error {
+	data, err := file.ReadCsv(s.timelineCsvSource, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
 
 	// take dates from csv first row
-	dateHeaders := []time.Time{}
+	var dateHeaders []time.Time
 	headers := data[0]
 	for _, header := range headers[3:] {
 		t, err := csvHeaderToDate(header)
@@ -240,49 +244,11 @@ func (m *Manager) PopulateTimeline(ctx context.Context) error {
 	}
 
 	for _, fl := range tl {
-		if err := m.addFullInfo(ctx, fl); err != nil {
+		if err := s.repo.AddFullInfo(ctx, fl); err != nil {
 			log.Fatal(err)
 		}
 
 		log.Printf("added full info for date %s", fl.Date.Format(simpleDateLayout))
-	}
-
-	return nil
-}
-
-func (m *Manager) addCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error {
-	sql := "INSERT INTO cases_per_prefecture (geo_id, date, cases) " +
-		"VALUES ((SELECT id FROM greece_geo_info WHERE slug=$1), $2, $3) ON CONFLICT DO NOTHING"
-	_, err := m.conn.Exec(ctx, sql, sluggedPrefecture, date, amount)
-	if err != nil {
-		return fmt.Errorf("could not insert row: %v", err)
-	}
-
-	return nil
-}
-
-func (m *Manager) addFullInfo(ctx context.Context, fi *FullInfo) error {
-	sql := `INSERT INTO greece_timeline (date,cases,total_reinfections,deaths,deaths_cum,recovered,beds_occupancy,
-			 icu_occupancy,intubated,intubated_vac,intubated_unvac,hospital_admissions,hospital_discharges,
-			 estimated_new_rtpcr_tests,estimated_new_rapid_tests,estimated_new_total_tests) 
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) ON CONFLICT DO NOTHING`
-	_, err := m.conn.Exec(ctx, sql, fi.Date, fi.Cases, fi.TotalReinfections, fi.Deaths, fi.DeathsCum, fi.Recovered,
-		fi.BedsOccupancy, fi.IcuOccupancy, fi.Intubated, fi.IntubatedVac, fi.IntubatedUnvac, fi.HospitalAdmissions,
-		fi.HospitalDischarges, fi.EstimatedNewRtpcrTests, fi.EstimatedNewRapidTests, fi.EstimatedNewTotalTests)
-	if err != nil {
-		return fmt.Errorf("error inserting into greece_timeline table: %s", err)
-	}
-
-	return nil
-}
-
-func (m *Manager) addGeoRow(ctx context.Context, geoInfo GeoInfo) error {
-	sql := `INSERT INTO greece_geo_info (slug, department, prefecture, county_normalized, county, pop_11) ` +
-		`VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
-	_, err := m.conn.Exec(ctx, sql, geoInfo.Slug, geoInfo.Department, geoInfo.Prefecture, geoInfo.CountyNormalized,
-		geoInfo.County, geoInfo.Pop11)
-	if err != nil {
-		return fmt.Errorf("could not insert greece_geo_info row: %v", err)
 	}
 
 	return nil

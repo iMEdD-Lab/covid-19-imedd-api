@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"log"
 	"time"
 
@@ -16,6 +17,10 @@ const (
 )
 
 func main() {
+	var skipDb bool
+	flag.BoolVar(&skipDb, "skipDb", false, "if true, skip db population")
+	flag.Parse()
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -24,29 +29,26 @@ func main() {
 		log.Fatalf("cannot start pg connection: %s", err)
 	}
 
+	repo := data.NewPgRepo(dbConn)
+
 	casesCsvUrl := env.EnvOrDefault("CASES_CSV_URL", casesCsvDefaultUrl)
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
 
-	dataManager, err := data.NewManager(dbConn, casesCsvUrl, timelineCsvUrl)
+	dataManager, err := data.NewService(repo, casesCsvUrl, timelineCsvUrl, false)
 	if err != nil {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
-	ticker := time.NewTicker(24 * time.Hour) // every day
-	done := make(chan bool)
-
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case <-ticker.C:
+	if !skipDb {
+		ticker := time.NewTicker(24 * time.Hour) // every day
+		go func() {
+			for ; true; <-ticker.C {
 				if err := dataManager.PopulateEverything(ctx); err != nil {
 					log.Printf("ERROR: database population failed: %s", err)
 				}
 			}
-		}
-	}()
+		}()
+	}
 
 	select {}
 }

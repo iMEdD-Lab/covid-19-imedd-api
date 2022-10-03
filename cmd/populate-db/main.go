@@ -34,11 +34,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot start pg connection: %s", err)
 	}
+	repo := data.NewPgRepo(dbConn)
 
 	casesCsvUrl := env.EnvOrDefault("CASES_CSV_URL", casesCsvDefaultUrl)
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
 
-	dataManager, err := data.NewManager(dbConn, casesCsvUrl, timelineCsvUrl)
+	dataManager, err := data.NewService(repo, casesCsvUrl, timelineCsvUrl, false)
 	if err != nil {
 		log.Fatalf("cannot init data manager: %s", err)
 	}

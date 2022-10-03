@@ -9,10 +9,14 @@ import (
 	"strings"
 )
 
-func ReadCSVFromUrl(url string) ([][]string, error) {
-	filepath, err := DownloadFile(url)
-	if err != nil {
-		return nil, err
+func ReadCsv(url string, sourceIsFile bool) ([][]string, error) {
+	var err error
+	filepath := url
+	if !sourceIsFile {
+		filepath, err = DownloadFile(url)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return ReadCsvFile(filepath)
 }
