@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	gitea.com/go-chi/cache v0.2.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect

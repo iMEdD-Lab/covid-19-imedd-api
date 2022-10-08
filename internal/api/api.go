@@ -5,9 +5,11 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
+	"gitea.com/go-chi/cache"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/httprate"
@@ -20,11 +22,13 @@ import (
 type Api struct {
 	router *chi.Mux
 	repo   data.Repo
+	cache  cache.Cache
 }
 
 func NewApi(repo data.Repo) *Api {
 	api := Api{
-		repo: repo,
+		repo:  repo,
+		cache: cache.NewMemoryCacher(),
 	}
 	api.initRouter()
 
@@ -44,7 +48,11 @@ func (a *Api) initRouter() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+
+	r.Use(a.authMw)
+	r.Use(a.cacheMw)
 
 	// health status
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -65,10 +73,10 @@ func (a *Api) initRouter() {
 			info, err := a.repo.GetGeoInfo(r.Context())
 			if err != nil {
 				log.Println(err)
-				renderJson(w, r, http.StatusInternalServerError, nil)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			renderJson(w, r, http.StatusOK, info)
+			a.respond200(w, r, info, false)
 		})
 
 		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
@@ -76,10 +84,10 @@ func (a *Api) initRouter() {
 			cases, err := a.repo.GetCases(r.Context(), filter)
 			if err != nil {
 				log.Println(err)
-				renderJson(w, r, http.StatusInternalServerError, nil)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			renderJson(w, r, http.StatusOK, cases)
+			a.respond200(w, r, cases, false)
 		})
 
 		r.Get("/from_timeline", func(w http.ResponseWriter, r *http.Request) {
@@ -87,14 +95,14 @@ func (a *Api) initRouter() {
 			info, err := a.repo.GetFromTimeline(r.Context(), tlf.DatesFilter)
 			if err != nil {
 				log.Println(err)
-				renderJson(w, r, http.StatusInternalServerError, nil)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
 			if len(tlf.Fields) > 0 {
-				renderJson(w, r, http.StatusOK, keepFields(tlf.Fields, info))
+				a.respond200(w, r, keepFields(tlf.Fields, info), false)
 				return
 			}
-			renderJson(w, r, http.StatusOK, info)
+			a.respond200(w, r, info, false)
 		})
 
 		r.Get("/{field}", func(w http.ResponseWriter, r *http.Request) {
@@ -102,10 +110,10 @@ func (a *Api) initRouter() {
 			info, err := a.repo.GetFromTimeline(r.Context(), datesFilter(r.URL.Query()))
 			if err != nil {
 				log.Println(err)
-				renderJson(w, r, http.StatusInternalServerError, nil)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			renderJson(w, r, http.StatusOK, keepFields([]string{field}, info))
+			a.respond200(w, r, keepFields([]string{field}, info), false)
 		})
 
 	})
@@ -114,9 +122,13 @@ func (a *Api) initRouter() {
 }
 
 func getTimelineFilter(values url.Values) TimelineFilter {
+	var fields []string
+	if len(values["fields"]) > 0 {
+		fields = strings.Split(values["fields"][0], ",")
+	}
 	return TimelineFilter{
 		DatesFilter: datesFilter(values),
-		Fields:      strings.Split(values["fields"][0], ","),
+		Fields:      fields,
 	}
 }
 
@@ -205,16 +217,11 @@ func (a *Api) authMw(next http.Handler) http.Handler {
 		tokenStr := ExtractTokenFromRequest(r)
 		if err := a.Authenticate(tokenStr); err != nil {
 			log.Println(err)
-			renderJson(w, r, http.StatusUnauthorized, ErrorResp{"unauthorized"})
+			a.respondError(w, r, http.StatusUnauthorized, ErrorResp{"unauthorized"})
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(r.Context()))
 	})
-}
-
-func (a *Api) Authenticate(token string) error {
-	// todo fill out authentication method
-	return nil
 }
 
 func ExtractTokenFromRequest(r *http.Request) string {
@@ -226,13 +233,47 @@ func ExtractTokenFromRequest(r *http.Request) string {
 	return ""
 }
 
-func renderJson(w http.ResponseWriter, r *http.Request, statusCode int, content interface{}) {
-	w.Header().Set("Content-Type", "application/json")
+func (a *Api) Authenticate(token string) error {
+	// todo fill out authentication method
+	return nil
+}
+
+func (a *Api) cacheMw(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && a.cache.IsExist(r.URL.RequestURI()) {
+			log.Printf("response for uri %s was CACHED", r.URL.RequestURI())
+			content := a.cache.Get(r.URL.RequestURI())
+			a.respond200(w, r, content, true)
+			return
+		}
+		log.Printf("NO CACHE for uri %s", r.URL.RequestURI())
+		next.ServeHTTP(w, r.WithContext(r.Context()))
+	})
+}
+
+func (a *Api) respondError(w http.ResponseWriter, r *http.Request, statusCode int, content interface{}) {
 	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(content); err != nil {
+	bytes, err := json.Marshal(content)
+	if err != nil {
 		log.Println("failed to marshal ErrorResp:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.Write(bytes)
+}
+
+func (a *Api) respond200(w http.ResponseWriter, r *http.Request, content interface{}, fromCache bool) {
+	if !fromCache {
+		a.cache.Put(r.URL.RequestURI(), content, 60)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	bytes, err := json.Marshal(content)
+	if err != nil {
+		log.Println("failed to marshal ErrorResp:", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	w.Header().Set("Content-Length", strconv.Itoa(len(bytes)))
+	w.Write(bytes)
 }
 
 type ErrorResp struct {
