@@ -51,7 +51,6 @@ func (a *Api) initRouter() {
 
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
-	r.Use(a.authMw)
 	r.Use(a.cacheMw)
 
 	// health status
