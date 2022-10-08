@@ -14,12 +14,17 @@ type Repo interface {
 	AddGeoRow(ctx context.Context, geoInfo GeoInfo) error
 	GetGeoInfo(ctx context.Context) ([]GeoInfo, error)
 	GetCases(ctx context.Context, filter CasesFilter) ([]Case, error)
+	GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error)
+}
+
+type DatesFilter struct {
+	StartDate time.Time
+	EndDate   time.Time
 }
 
 type CasesFilter struct {
-	GeoId     int
-	StartDate time.Time
-	EndDate   time.Time
+	DatesFilter
+	GeoId int
 }
 
 type PgRepo struct {
@@ -31,8 +36,8 @@ func NewPgRepo(conn *pgxpool.Pool) *PgRepo {
 }
 
 func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error {
-	sql := "INSERT INTO cases_per_prefecture (geo_id, date, cases) " +
-		"VALUES ((SELECT id FROM greece_geo_info WHERE slug=$1), $2, $3) ON CONFLICT DO NOTHING"
+	sql := `INSERT INTO cases_per_prefecture (geo_id, date, cases) 
+            VALUES ((SELECT id FROM greece_geo_info WHERE slug=$1), $2, $3) ON CONFLICT DO NOTHING`
 	_, err := r.conn.Exec(ctx, sql, sluggedPrefecture, date, amount)
 	if err != nil {
 		return fmt.Errorf("could not insert row: %v", err)
@@ -57,8 +62,8 @@ func (r *PgRepo) AddFullInfo(ctx context.Context, fi *FullInfo) error {
 }
 
 func (r *PgRepo) AddGeoRow(ctx context.Context, geoInfo GeoInfo) error {
-	sql := `INSERT INTO greece_geo_info (slug, department, prefecture, county_normalized, county, pop_11) ` +
-		`VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
+	sql := `INSERT INTO greece_geo_info (slug, department, prefecture, county_normalized, county, pop_11) 
+            VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 	_, err := r.conn.Exec(ctx, sql, geoInfo.Slug, geoInfo.Department, geoInfo.Prefecture, geoInfo.CountyNormalized,
 		geoInfo.County, geoInfo.Pop11)
 	if err != nil {
@@ -72,7 +77,7 @@ func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
 	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from greece_geo_info`
 	rows, err := r.conn.Query(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("could not get Geo Info: %s", err)
+		return nil, fmt.Errorf("could not get Geo Info from db: %s", err)
 	}
 
 	var res []GeoInfo
@@ -117,9 +122,11 @@ func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, erro
 		args = append(args, filter.EndDate)
 	}
 
+	sql += " ORDER BY date ASC "
+
 	rows, err := r.conn.Query(ctx, sql, args...)
 	if err != nil {
-		return nil, fmt.Errorf("could not get Geo Info: %s", err)
+		return nil, fmt.Errorf("could not get cases from db: %s", err)
 	}
 
 	var res []Case
@@ -132,4 +139,42 @@ func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, erro
 	}
 
 	return res, nil
+}
+
+func (r *PgRepo) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error) {
+	sql := `SELECT * FROM greece_timeline WHERE 1=1 `
+	var args []interface{}
+	counter := 1
+	if !filter.StartDate.IsZero() {
+		sql += fmt.Sprintf(" AND date >= $%d ", counter)
+		counter++
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		sql += fmt.Sprintf(" AND date <= $%d ", counter)
+		counter++
+		args = append(args, filter.EndDate)
+	}
+
+	sql += " ORDER BY date ASC "
+
+	rows, err := r.conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("db error getting from greece_timeline: %s", err)
+	}
+
+	var fullInfos []FullInfo
+	for rows.Next() {
+		var fi FullInfo
+		if err := rows.Scan(&fi.Date, &fi.Cases, &fi.TotalReinfections, &fi.Deaths, &fi.DeathsCum, &fi.Recovered,
+			&fi.BedsOccupancy, &fi.IcuOccupancy, &fi.Intubated, &fi.IntubatedVac, &fi.IntubatedUnvac,
+			&fi.HospitalAdmissions, &fi.HospitalDischarges, &fi.EstimatedNewRtpcrTests, &fi.EstimatedNewRapidTests,
+			&fi.EstimatedNewTotalTests); err != nil {
+			return nil, fmt.Errorf("db error scanning greece_timeline: %s", err)
+		}
+		fullInfos = append(fullInfos, fi)
+	}
+
+	return fullInfos, nil
 }

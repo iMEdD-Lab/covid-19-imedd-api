@@ -13,6 +13,8 @@ import (
 	"covid19-greece-api/pkg/vartypes"
 )
 
+// todo reduce some logs
+
 const (
 	dateLayout       = "01/02/06"
 	simpleDateLayout = "2006-01-02"
@@ -26,22 +28,22 @@ type Service struct {
 }
 
 type FullInfo struct {
-	Date                   time.Time
-	Cases                  int
-	TotalReinfections      int
-	Deaths                 int
-	DeathsCum              int
-	Recovered              int
-	HospitalAdmissions     int
-	HospitalDischarges     int
-	Intubated              int
-	IntubatedVac           int
-	IntubatedUnvac         int
-	IcuOccupancy           float64
-	BedsOccupancy          float64
-	EstimatedNewRtpcrTests int
-	EstimatedNewRapidTests int
-	EstimatedNewTotalTests int
+	Date                   time.Time `json:"date"`
+	Cases                  int       `json:"cases"`
+	TotalReinfections      int       `json:"total_reinfections"`
+	Deaths                 int       `json:"deaths"`
+	DeathsCum              int       `json:"deaths_cum"`
+	Recovered              int       `json:"recovered"`
+	HospitalAdmissions     int       `json:"hospital_admissions"`
+	HospitalDischarges     int       `json:"hospital_discharges"`
+	Intubated              int       `json:"intubated"`
+	IntubatedVac           int       `json:"intubated_vac"`
+	IntubatedUnvac         int       `json:"intubated_unvac"`
+	IcuOccupancy           float64   `json:"icu_occupancy"`
+	BedsOccupancy          float64   `json:"beds_occupancy"`
+	EstimatedNewRtpcrTests int       `json:"estimated_new_rtpcr_tests"`
+	EstimatedNewRapidTests int       `json:"estimated_new_rapid_tests"`
+	EstimatedNewTotalTests int       `json:"estimated_new_total_tests"`
 }
 
 type GeoInfo struct {
