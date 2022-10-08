@@ -4,6 +4,7 @@ go 1.19
 
 require (
 	github.com/go-chi/chi v1.5.4
+	github.com/go-chi/httprate v0.7.0
 	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/golang/mock v1.6.0
 	github.com/gosimple/slug v1.13.0
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect

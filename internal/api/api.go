@@ -10,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/httprate"
 
 	"covid19-greece-api/internal/data"
 	"covid19-greece-api/pkg/env"
@@ -43,6 +44,7 @@ func (a *Api) initRouter() {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
 	// health status
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
