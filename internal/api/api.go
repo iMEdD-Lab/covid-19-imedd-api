@@ -31,7 +31,7 @@ func NewApi(repo data.Repo) *Api {
 }
 
 func (a *Api) Serve() error {
-	listenAddr := env.EnvOrDefault("PORT", ":12122")
+	listenAddr := env.EnvOrDefault("PORT", ":8080")
 	log.Printf("Covid 19 GR API started. Listening on %s\n", listenAddr)
 
 	return http.ListenAndServe(listenAddr, a.router)
