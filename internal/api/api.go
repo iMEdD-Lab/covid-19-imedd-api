@@ -89,7 +89,29 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, cases, false)
 		})
 
-		r.Get("/from_timeline", func(w http.ResponseWriter, r *http.Request) {
+		// helper endpoint
+		r.Get("/timeline_fields", func(w http.ResponseWriter, r *http.Request) {
+			tlFields := []string{
+				"cases",
+				"total_reinfections",
+				"deaths",
+				"deaths_cum",
+				"recovered",
+				"beds_occupancy",
+				"icu_occupancy",
+				"intubated",
+				"intubated_vac",
+				"intubated_unvac",
+				"hospital_admissions",
+				"hospital_discharges",
+				"estimated_new_rtpcr_tests",
+				"estimated_new_rapid_tests",
+				"estimated_new_total_tests",
+			}
+			a.respond200(w, r, tlFields, false)
+		})
+
+		r.Get("/timeline", func(w http.ResponseWriter, r *http.Request) {
 			tlf := getTimelineFilter(r.URL.Query())
 			info, err := a.repo.GetFromTimeline(r.Context(), tlf.DatesFilter)
 			if err != nil {
