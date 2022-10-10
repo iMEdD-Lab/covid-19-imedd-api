@@ -262,12 +262,10 @@ func (a *Api) Authenticate(token string) error {
 func (a *Api) cacheMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet && a.cache.IsExist(r.URL.RequestURI()) {
-			log.Printf("response for uri %s was CACHED", r.URL.RequestURI())
 			content := a.cache.Get(r.URL.RequestURI())
 			a.respond200(w, r, content, true)
 			return
 		}
-		log.Printf("NO CACHE for uri %s", r.URL.RequestURI())
 		next.ServeHTTP(w, r.WithContext(r.Context()))
 	})
 }
@@ -284,7 +282,7 @@ func (a *Api) respondError(w http.ResponseWriter, r *http.Request, statusCode in
 
 func (a *Api) respond200(w http.ResponseWriter, r *http.Request, content interface{}, fromCache bool) {
 	if !fromCache {
-		a.cache.Put(r.URL.RequestURI(), content, 60)
+		a.cache.Put(r.URL.RequestURI(), content, 60*60*24)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
