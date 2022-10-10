@@ -1,0 +1,27 @@
+services:
+  api:
+    container_name: covid19-api
+    image: covidapi:latest
+    environment:
+      POSTGRES_DSN: "postgres://admin:password@postgres:5432/covid19?sslmode=disable"
+      PORT: ":8080"
+      POPULATE_DB: "true"
+      MIGRATIONS_DIR: /root/migrations
+    volumes:
+    - ./migrations:/root/migrations
+    depends_on:
+    - postgres
+    ports:
+    - "8080:8080"
+  postgres:
+    container_name: covid19-postgres
+    image: postgres:12.3
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: covid19
+    volumes:
+    - ./testdata/postgres:/var/lib/postgresql/data
+    ports:
+    - "5432:5432"
+    restart: unless-stopped
