@@ -25,3 +25,12 @@ services:
     ports:
     - "5432:5432"
     restart: unless-stopped
+  swagger:
+    container_name: swagger
+    image: swaggerapi/swagger-ui
+    environment:
+      URL: /swagger.yml
+    volumes:
+    - ./documentation/swagger.yaml:/usr/share/nginx/html/swagger.yml
+    ports:
+    - "9000:8080"
