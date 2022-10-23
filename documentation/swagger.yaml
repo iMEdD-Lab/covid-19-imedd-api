@@ -1,0 +1,259 @@
+openapi: 3.0.1
+info:
+  version: 1.0.0
+  title: Covid19 Greek Data API
+servers:
+- url: http://localhost:8080
+paths:
+  /health:
+    get:
+      summary: simple healthcheck
+      tags:
+      - helper endpoints
+      responses:
+        '200':
+          description: OK
+  /timeline_fields:
+    get:
+      summary: get all filter fields for /timeline endpoint
+      tags:
+      - helper endpoints
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/timelineFields'
+  /geo_info:
+    get:
+      summary: general geographical information for Greece
+      tags:
+      - endpoints
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/counties'
+  /cases:
+    get:
+      summary: covid19 cases per municipality
+      tags:
+      - endpoints
+      parameters:
+      - in: query
+        name: geo_id
+        schema:
+          description: the id of a specific geographical region (see /geo_info endpoint)
+          type: integer
+          example: 2
+      - in: query
+        name: start_date
+        schema:
+          description: the first date of the cases period
+          type: string
+          example: 2022-01-01
+      - in: query
+        name: end_date
+        schema:
+          description: the last date of the cases period
+          type: string
+          example: 2022-01-10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/municipalityCasesList'
+  /timeline:
+    get:
+      summary: get full covid19 info for every date at a specific period
+      tags:
+      - endpoints
+      parameters:
+      - in: query
+        name: fields
+        schema:
+          description: filter specific fields, separated by comma (see GET /timeline_fields endpoint for a full list)
+          type: string
+          example: intubated,deaths
+      - in: query
+        name: start_date
+        schema:
+          description: the first date of the timeline period
+          type: string
+          example: 2022-01-01
+      - in: query
+        name: end_date
+        schema:
+          description: the last date of the timeline period
+          type: string
+          example: 2022-01-10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/covidInfo'
+  /{field}:
+    get:
+      summary: get covid19 timeline info for a specific field (same as GET /timeline?fields={field})
+      tags:
+      - endpoints
+      parameters:
+      - in: path
+        name: field
+        required: true
+        schema:
+          type: string
+          example: intubated
+      - in: query
+        name: start_date
+        schema:
+          description: the first date of the timeline period
+          type: string
+          example: 2022-01-01
+      - in: query
+        name: end_date
+        schema:
+          description: the last date of the timeline period
+          type: string
+          example: 2022-01-10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/singleFieldCovidInfo'
+components:
+  schemas:
+    municipalityCases:
+      description: cases per municipality at a specific date
+      type: object
+      properties:
+        geo_id:
+          type: integer
+          example: 1
+        date:
+          type: string
+          example: "2022-01-01"
+        cases:
+          type: integer
+          example: 143
+    municipalityCasesList:
+      type: array
+      items:
+        $ref: '#/components/schemas/municipalityCases'
+    timelineFields:
+      type: array
+      items:
+        type: string
+        example: deaths
+      example: [
+        "cases", "total_reinfections", "deaths", "deaths_cum", "recovered", "beds_occupancy", "icu_occupancy",
+        "intubated", "intubated_vac", "intubated_unvac", "hospital_admissions", "hospital_discharges",
+        "estimated_new_rtpcr_tests", "estimated_new_rapid_tests", "estimated_new_total_tests"
+      ]
+    county:
+      description: greek county
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        slug:
+          type: string
+          description: a slugged version of the normalized name of the county
+          example: "artas"
+        department:
+          type: string
+          example: "Ήπειρος"
+        prefecture:
+          type: string
+          example: "Περιφέρεια Ηπείρου"
+        county_normalized:
+          type: string
+          description: the normalized version of the county name in greek capital letters
+          example: "ΑΡΤΑΣ"
+        county:
+          type: string
+          example: "Π.Ε. Άρτας"
+        pop_11:
+          type: integer
+          example: 38473
+    counties:
+      type: array
+      items:
+        $ref: '#/components/schemas/county'
+    singleFieldCovidInfo:
+      description: info for a specific timeline field
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2021-01-01"
+        field:
+          type: string
+          example: deaths
+    covidInfo:
+      description: daily covid19 full info
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2021-01-01"
+        cases:
+          type: integer
+          example: 50
+        total_reinfections:
+          type: integer
+          example: 50
+        deaths:
+          type: integer
+          example: 50
+        deaths_cum:
+          type: integer
+          example: 50
+        recovered:
+          type: integer
+          example: 50
+        hospital_admissions:
+          type: integer
+          example: 50
+        hospital_discharges:
+          type: integer
+          example: 50
+        intubated:
+          type: integer
+          example: 50
+        intubated_vac:
+          type: integer
+          example: 50
+        intubated_unvac:
+          type: integer
+          example: 50
+        icu_occupancy:
+          type: integer
+          example: 50
+        beds_occupancy:
+          type: integer
+          example: 50
+        estimated_new_rtpcr_tests:
+          type: integer
+          example: 50
+        estimated_new_rapid_tests:
+          type: integer
+          example: 50
+        estimated_new_total_tests:
+          type: integer
+          example: 50

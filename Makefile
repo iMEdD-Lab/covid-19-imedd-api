@@ -55,3 +55,11 @@ test:
 mocks:
 	mockgen -destination internal/data/repo_mock.go -package data -source internal/data/repo.go -mock_names Repo=RepoMock && \
 	echo "mocks generated successfully"
+
+.PHONY: swagger-start
+swagger-start: ## serve swagger documentation locally (localhost:9000)
+	docker run --rm --name covid19-api-docs -d -p 9000:8080 -v $(shell pwd)/documentation/swagger.yaml:/usr/share/nginx/html/swagger.yml:ro -e URL=/swagger.yml swaggerapi/swagger-ui
+
+.PHONY: swagger-stop
+swagger-stop: ## stop serving swagger documentation locally
+	docker stop covid19-api-docs
