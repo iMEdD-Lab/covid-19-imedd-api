@@ -136,6 +136,21 @@ func (mr *RepoMockMockRecorder) GetCounties(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounties", reflect.TypeOf((*RepoMock)(nil).GetCounties), ctx)
 }
 
+// GetDeathsPerMunicipality mocks base method.
+func (m *RepoMock) GetDeathsPerMunicipality(ctx context.Context, filter DeathsFilter) ([]YearlyDeaths, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDeathsPerMunicipality", ctx, filter)
+	ret0, _ := ret[0].([]YearlyDeaths)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDeathsPerMunicipality indicates an expected call of GetDeathsPerMunicipality.
+func (mr *RepoMockMockRecorder) GetDeathsPerMunicipality(ctx, filter interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDeathsPerMunicipality", reflect.TypeOf((*RepoMock)(nil).GetDeathsPerMunicipality), ctx, filter)
+}
+
 // GetFromTimeline mocks base method.
 func (m *RepoMock) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error) {
 	m.ctrl.T.Helper()

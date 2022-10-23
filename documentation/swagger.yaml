@@ -9,7 +9,7 @@ paths:
     get:
       summary: simple healthcheck
       tags:
-      - helper endpoints
+      - helpers
       responses:
         '200':
           description: OK
@@ -17,7 +17,7 @@ paths:
     get:
       summary: get all filter fields for /timeline endpoint
       tags:
-      - helper endpoints
+      - helpers
       responses:
         '200':
           description: OK
@@ -57,9 +57,9 @@ paths:
                 - $ref: '#/components/schemas/municipalities'
   /cases:
     get:
-      summary: covid19 cases per municipality
+      summary: covid19 cases per county
       tags:
-      - endpoints
+      - covid19
       parameters:
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/per_page'
@@ -89,11 +89,39 @@ paths:
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/municipalityCasesList'
+  /deaths_per_municipality:
+    get:
+      summary: covid19 deaths per municipality
+      tags:
+      - covid19
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
+      - in: query
+        name: municipality_id
+        schema:
+          description: the id of a specific municipality (see /municipalities endpoint)
+          type: integer
+          example: 12
+      - in: query
+        name: year
+        schema:
+          description: a specific year of deaths
+          type: integer
+          example: 2021
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/deathsPerMunicipality'
   /timeline:
     get:
       summary: get full covid19 info for every date at a specific period
       tags:
-      - endpoints
+      - covid19
       parameters:
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/per_page'
@@ -127,7 +155,7 @@ paths:
     get:
       summary: get covid19 timeline info for a specific field (same as GET /timeline?fields={field})
       tags:
-      - endpoints
+      - covid19
       parameters:
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/per_page'
@@ -213,6 +241,10 @@ components:
         pop_11:
           type: integer
           example: 38473
+    counties:
+      type: array
+      items:
+        $ref: '#/components/schemas/county'
     municipalities:
       type: array
       items:
@@ -231,10 +263,24 @@ components:
           type: string
           description: a slugged version of municipality name
           example: "pargas"
-    counties:
+    yearlyDeaths:
+      description: deaths for a specific year and municipality
+      type: object
+      properties:
+        year:
+          type: integer
+          example: 2021
+        deaths:
+          type: integer
+          example: 100
+        municipality_id:
+          type: integer
+          description: id of a specific municipality (see GET /municipalities for details)
+          example: 12
+    deathsPerMunicipality:
       type: array
       items:
-        $ref: '#/components/schemas/county'
+        $ref: '#/components/schemas/yearlyDeaths'
     singleFieldCovidInfo:
       description: info for a specific timeline field
       type: object

@@ -99,6 +99,18 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, municipalities[p.start:p.end], false)
 		})
 
+		r.Get("/deaths_per_municipality", func(w http.ResponseWriter, r *http.Request) {
+			f := deathsFilter(r.URL.Query())
+			municipalities, err := a.repo.GetDeathsPerMunicipality(r.Context(), f)
+			if err != nil {
+				log.Println(err)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
+				return
+			}
+			p := getPagination(r.URL.Query(), len(municipalities))
+			a.respond200(w, r, municipalities[p.start:p.end], false)
+		})
+
 		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
 			filter := casesFilter(r.URL.Query())
 			cases, err := a.repo.GetCases(r.Context(), filter)
@@ -164,6 +176,20 @@ func (a *Api) initRouter() {
 	})
 
 	a.router = r
+}
+
+func deathsFilter(values url.Values) data.DeathsFilter {
+	f := data.DeathsFilter{}
+	for k, v := range values {
+		switch k {
+		case "year":
+			f.Year = vartypes.StringToInt(v[0])
+		case "municipality_id":
+			f.MunId = vartypes.StringToInt(v[0])
+		}
+	}
+
+	return f
 }
 
 func getTimelineFilter(values url.Values) TimelineFilter {

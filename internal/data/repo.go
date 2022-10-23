@@ -20,6 +20,7 @@ type Repo interface {
 	AddYearlyDeath(ctx context.Context, munId, deaths, year int) error
 	AddMunicipality(ctx context.Context, name string) (int, error)
 	GetMunicipalities(ctx context.Context) ([]Municipality, error)
+	GetDeathsPerMunicipality(ctx context.Context, filter DeathsFilter) ([]YearlyDeaths, error)
 }
 
 type DatesFilter struct {
@@ -233,4 +234,43 @@ func (r *PgRepo) AddMunicipality(ctx context.Context, name string) (int, error) 
 	}
 
 	return id, nil
+}
+
+type DeathsFilter struct {
+	MunId int
+	Year  int
+}
+
+func (r *PgRepo) GetDeathsPerMunicipality(ctx context.Context, filter DeathsFilter) ([]YearlyDeaths, error) {
+	sql := `SELECT year,municipality_id,deaths_cum FROM deaths_per_municipality_cum WHERE 1=1 `
+	counter := 1
+	var args []interface{}
+
+	if filter.MunId > 0 {
+		sql += fmt.Sprintf(` AND municipality_id=$%d `, counter)
+		counter++
+		args = append(args, filter.MunId)
+	}
+
+	if filter.Year > 0 {
+		sql += fmt.Sprintf(` AND year=$%d `, counter)
+		counter++
+		args = append(args, filter.Year)
+	}
+
+	rows, err := r.conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("cannot query deaths_per_municipality_cum: %s", err)
+	}
+
+	var res []YearlyDeaths
+	for rows.Next() {
+		var y YearlyDeaths
+		if err := rows.Scan(&y.Year, &y.MunId, &y.Deaths); err != nil {
+			return nil, fmt.Errorf("cannot scan deaths_per_municipality_cum row: %s", err)
+		}
+		res = append(res, y)
+	}
+
+	return res, nil
 }

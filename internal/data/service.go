@@ -66,6 +66,12 @@ type Municipality struct {
 	Slug string `json:"slug"`
 }
 
+type YearlyDeaths struct {
+	MunId  int `json:"municipality_id"`
+	Deaths int `json:"deaths"`
+	Year   int `json:"year"`
+}
+
 func NewService(
 	repo Repo,
 	casesSrc string,
