@@ -30,7 +30,7 @@ paths:
     get:
       summary: Greece's county geographical information
       tags:
-      - endpoints
+      - geographical
       responses:
         '200':
           description: OK
@@ -39,6 +39,22 @@ paths:
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/counties'
+  /municipalities:
+    get:
+      summary: Greece's municipality geographical information
+      tags:
+      - geographical
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/municipalities'
   /cases:
     get:
       summary: covid19 cases per municipality
@@ -197,6 +213,24 @@ components:
         pop_11:
           type: integer
           example: 38473
+    municipalities:
+      type: array
+      items:
+        $ref: '#/components/schemas/municipality'
+    municipality:
+      description: greek municipality
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Πάργας"
+        slug:
+          type: string
+          description: a slugged version of municipality name
+          example: "pargas"
     counties:
       type: array
       items:
