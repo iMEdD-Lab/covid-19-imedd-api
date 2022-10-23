@@ -78,8 +78,8 @@ func (a *Api) initRouter() {
 			w.WriteHeader(http.StatusOK)
 		})
 
-		r.Get("/geo_info", func(w http.ResponseWriter, r *http.Request) {
-			info, err := a.repo.GetGeoInfo(r.Context())
+		r.Get("/counties", func(w http.ResponseWriter, r *http.Request) {
+			info, err := a.repo.GetCounties(r.Context())
 			if err != nil {
 				log.Println(err)
 				a.respondError(w, r, http.StatusInternalServerError, nil)

@@ -50,17 +50,17 @@ func (mr *RepoMockMockRecorder) AddCase(ctx, date, amount, sluggedPrefecture int
 }
 
 // AddCounty mocks base method.
-func (m *RepoMock) AddCounty(ctx context.Context, geoInfo GeoInfo) error {
+func (m *RepoMock) AddCounty(ctx context.Context, county County) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCounty", ctx, geoInfo)
+	ret := m.ctrl.Call(m, "AddCounty", ctx, county)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCounty indicates an expected call of AddCounty.
-func (mr *RepoMockMockRecorder) AddCounty(ctx, geoInfo interface{}) *gomock.Call {
+func (mr *RepoMockMockRecorder) AddCounty(ctx, county interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCounty", reflect.TypeOf((*RepoMock)(nil).AddCounty), ctx, geoInfo)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCounty", reflect.TypeOf((*RepoMock)(nil).AddCounty), ctx, county)
 }
 
 // AddFullInfo mocks base method.
@@ -121,6 +121,21 @@ func (mr *RepoMockMockRecorder) GetCases(ctx, filter interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCases", reflect.TypeOf((*RepoMock)(nil).GetCases), ctx, filter)
 }
 
+// GetCounties mocks base method.
+func (m *RepoMock) GetCounties(ctx context.Context) ([]County, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCounties", ctx)
+	ret0, _ := ret[0].([]County)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCounties indicates an expected call of GetCounties.
+func (mr *RepoMockMockRecorder) GetCounties(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounties", reflect.TypeOf((*RepoMock)(nil).GetCounties), ctx)
+}
+
 // GetFromTimeline mocks base method.
 func (m *RepoMock) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error) {
 	m.ctrl.T.Helper()
@@ -134,19 +149,4 @@ func (m *RepoMock) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]F
 func (mr *RepoMockMockRecorder) GetFromTimeline(ctx, filter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFromTimeline", reflect.TypeOf((*RepoMock)(nil).GetFromTimeline), ctx, filter)
-}
-
-// GetGeoInfo mocks base method.
-func (m *RepoMock) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGeoInfo", ctx)
-	ret0, _ := ret[0].([]GeoInfo)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetGeoInfo indicates an expected call of GetGeoInfo.
-func (mr *RepoMockMockRecorder) GetGeoInfo(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGeoInfo", reflect.TypeOf((*RepoMock)(nil).GetGeoInfo), ctx)
 }

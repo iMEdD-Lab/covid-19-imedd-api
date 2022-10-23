@@ -12,8 +12,8 @@ import (
 type Repo interface {
 	AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
-	AddCounty(ctx context.Context, geoInfo GeoInfo) error
-	GetGeoInfo(ctx context.Context) ([]GeoInfo, error)
+	AddCounty(ctx context.Context, county County) error
+	GetCounties(ctx context.Context) ([]County, error)
 	GetCases(ctx context.Context, filter CasesFilter) ([]Case, error)
 	GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error)
 	AddYearlyDeath(ctx context.Context, munId, deaths, year int) error
@@ -64,11 +64,11 @@ func (r *PgRepo) AddFullInfo(ctx context.Context, fi *FullInfo) error {
 	return nil
 }
 
-func (r *PgRepo) AddCounty(ctx context.Context, geoInfo GeoInfo) error {
+func (r *PgRepo) AddCounty(ctx context.Context, county County) error {
 	sql := `INSERT INTO counties (slug, department, prefecture, county_normalized, county, pop_11) 
             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
-	_, err := r.conn.Exec(ctx, sql, geoInfo.Slug, geoInfo.Department, geoInfo.Prefecture, geoInfo.CountyNormalized,
-		geoInfo.County, geoInfo.Pop11)
+	_, err := r.conn.Exec(ctx, sql, county.Slug, county.Department, county.Prefecture, county.CountyNormalized,
+		county.County, county.Pop11)
 	if err != nil {
 		return fmt.Errorf("could not insert counties row: %v", err)
 	}
@@ -76,19 +76,19 @@ func (r *PgRepo) AddCounty(ctx context.Context, geoInfo GeoInfo) error {
 	return nil
 }
 
-func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
+func (r *PgRepo) GetCounties(ctx context.Context) ([]County, error) {
 	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from counties`
 	rows, err := r.conn.Query(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("could not get Geo Info from db: %s", err)
+		return nil, fmt.Errorf("could not get County from db: %s", err)
 	}
 
-	var res []GeoInfo
+	var res []County
 	for rows.Next() {
-		var g GeoInfo
+		var g County
 		if err := rows.Scan(&g.Id, &g.Slug, &g.Department, &g.Prefecture,
 			&g.CountyNormalized, &g.County, &g.Pop11); err != nil {
-			return nil, fmt.Errorf("could not scan Geo Info row: %s", err)
+			return nil, fmt.Errorf("could not scan counties row: %s", err)
 		}
 		res = append(res, g)
 	}

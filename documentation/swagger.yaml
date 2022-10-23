@@ -26,9 +26,9 @@ paths:
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/timelineFields'
-  /geo_info:
+  /counties:
     get:
-      summary: general geographical information for Greece
+      summary: Greece's county geographical information
       tags:
       - endpoints
       responses:
@@ -50,7 +50,7 @@ paths:
       - in: query
         name: geo_id
         schema:
-          description: the id of a specific geographical region (see /geo_info endpoint)
+          description: the id of a specific geographical region (see /counties endpoint)
           type: integer
           example: 2
       - in: query

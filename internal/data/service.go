@@ -50,7 +50,7 @@ type FullInfo struct {
 	EstimatedNewTotalTests int       `json:"estimated_new_total_tests"`
 }
 
-type GeoInfo struct {
+type County struct {
 	Id               int    `json:"id"`
 	Slug             string `json:"slug"`
 	Department       string `json:"department"`
@@ -150,7 +150,7 @@ func (s *Service) PopulateCounties(ctx context.Context) error {
 	}
 
 	for _, row := range data[1:] {
-		err := s.repo.AddCounty(ctx, GeoInfo{
+		err := s.repo.AddCounty(ctx, County{
 			Slug:             slug.Make(row[2]),
 			Department:       row[0],
 			Prefecture:       row[1],

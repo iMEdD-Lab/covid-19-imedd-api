@@ -48,7 +48,7 @@ func TestDataServiceSuite(t *testing.T) {
 func (s *DataServiceSuite) TestPopulateCounties() {
 	ctx := context.Background()
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
 		Slug:             "county_1",
 		Department:       "Department_1",
 		Prefecture:       "Prefecture_1",
@@ -57,7 +57,7 @@ func (s *DataServiceSuite) TestPopulateCounties() {
 		Pop11:            10000,
 	})
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
 		Slug:             "county_2",
 		Department:       "Department_2",
 		Prefecture:       "Prefecture_2",
@@ -66,7 +66,7 @@ func (s *DataServiceSuite) TestPopulateCounties() {
 		Pop11:            20000,
 	})
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
 		Slug:             "county_3",
 		Department:       "Department_3",
 		Prefecture:       "Prefecture_3",
