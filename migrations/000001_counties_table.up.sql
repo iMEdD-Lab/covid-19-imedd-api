@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS greece_geo_info
+CREATE TABLE IF NOT EXISTS counties
 (
     id                SERIAL PRIMARY KEY,
     slug              VARCHAR(255) NOT NULL UNIQUE,
@@ -9,4 +9,4 @@ CREATE TABLE IF NOT EXISTS greece_geo_info
     pop_11            INTEGER      NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_slug ON greece_geo_info (slug);
+CREATE INDEX IF NOT EXISTS idx_slug ON counties (slug);

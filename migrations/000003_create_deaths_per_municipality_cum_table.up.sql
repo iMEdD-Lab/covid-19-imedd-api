@@ -1,10 +1,21 @@
-CREATE TABLE IF NOT EXISTS deaths_per_municipality_cum
+CREATE TABLE IF NOT EXISTS municipalities
 (
-    date         DATE,
-    municipality VARCHAR(255),
-    deaths_cum   INTEGER,
-    UNIQUE (date, municipality)
+    id   SERIAL PRIMARY KEY,
+    name VARCHAR(256),
+    slug VARCHAR(256),
+    UNIQUE (name)
 );
 
-CREATE INDEX IF NOT EXISTS idx_date_deaths ON deaths_per_municipality_cum (date);
-CREATE INDEX IF NOT EXISTS idx_municipality ON deaths_per_municipality_cum (municipality);
+CREATE TABLE IF NOT EXISTS deaths_per_municipality_cum
+(
+    year            INTEGER,
+    municipality_id INTEGER,
+    deaths_cum      INTEGER,
+    UNIQUE (year, municipality_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_deaths_per_municipality_cum_year ON deaths_per_municipality_cum (year);
+CREATE INDEX IF NOT EXISTS idx_deaths_per_municipality_cum_municipality_id ON deaths_per_municipality_cum (municipality_id);
+
+ALTER TABLE deaths_per_municipality_cum
+    ADD CONSTRAINT fk_municipality_id FOREIGN KEY (municipality_id) REFERENCES municipalities (id);

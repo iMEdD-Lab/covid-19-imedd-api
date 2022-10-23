@@ -30,6 +30,7 @@ func (s *DataServiceSuite) SetupSuite() {
 		s.repoMock,
 		filepath.Join(path, "test_csv/testing_cases.csv"),
 		filepath.Join(path, "test_csv/testing_timeline.csv"),
+		filepath.Join(path, "test_csv/testing_deaths.csv"),
 		true,
 	)
 	assert.Nil(s.T(), err)
@@ -44,10 +45,10 @@ func TestDataServiceSuite(t *testing.T) {
 	suite.Run(t, new(DataServiceSuite))
 }
 
-func (s *DataServiceSuite) TestPopulateGeo() {
+func (s *DataServiceSuite) TestPopulateCounties() {
 	ctx := context.Background()
 
-	s.repoMock.EXPECT().AddGeoRow(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
 		Slug:             "county_1",
 		Department:       "Department_1",
 		Prefecture:       "Prefecture_1",
@@ -56,7 +57,7 @@ func (s *DataServiceSuite) TestPopulateGeo() {
 		Pop11:            10000,
 	})
 
-	s.repoMock.EXPECT().AddGeoRow(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
 		Slug:             "county_2",
 		Department:       "Department_2",
 		Prefecture:       "Prefecture_2",
@@ -65,7 +66,7 @@ func (s *DataServiceSuite) TestPopulateGeo() {
 		Pop11:            20000,
 	})
 
-	s.repoMock.EXPECT().AddGeoRow(gomock.Any(), GeoInfo{
+	s.repoMock.EXPECT().AddCounty(gomock.Any(), GeoInfo{
 		Slug:             "county_3",
 		Department:       "Department_3",
 		Prefecture:       "Prefecture_3",
@@ -74,7 +75,7 @@ func (s *DataServiceSuite) TestPopulateGeo() {
 		Pop11:            30000,
 	})
 
-	assert.Nil(s.T(), s.srv.PopulateGeo(ctx))
+	assert.Nil(s.T(), s.srv.PopulateCounties(ctx))
 }
 
 func (s *DataServiceSuite) TestPopulateCases() {
@@ -160,4 +161,18 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 	})
 
 	assert.Nil(s.T(), s.srv.PopulateTimeline(ctx))
+}
+
+func (s *DataServiceSuite) TestPopulateMunicipalities() {
+	ctx := context.Background()
+	s.repoMock.EXPECT().AddMunicipality(gomock.Any(), "Λιλιπούπολης").Return(50, nil)
+	s.repoMock.EXPECT().AddMunicipality(gomock.Any(), "Κουκουβάουνες").Return(60, nil)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 50, 1, 2020)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 50, 2, 2021)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 50, 3, 2034)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 60, 10, 2020)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 60, 20, 2021)
+	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 60, 30, 2034)
+
+	assert.Nil(s.T(), s.srv.PopulateDeathsPerMunicipality(ctx))
 }

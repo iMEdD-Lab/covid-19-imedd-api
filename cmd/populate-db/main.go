@@ -14,15 +14,17 @@ import (
 )
 
 const (
-	casesCsvDefaultUrl    = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/greece_cases_v2.csv`
-	timelineDefaultCsvUrl = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/greeceTimeline.csv`
+	casesCsvDefaultUrl          = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/greece_cases_v2.csv`
+	timelineDefaultCsvUrl       = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/greeceTimeline.csv`
+	deathsPerMunicipalityCsvUrl = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv`
 )
 
 func main() {
-	var skipGeo, skipCases, skipTimeline bool
-	flag.BoolVar(&skipGeo, "skipGeo", false, "skips populating greece_geo_info table")
+	var skipGeo, skipCases, skipTimeline, skipDeaths bool
+	flag.BoolVar(&skipGeo, "skipGeo", false, "skips populating counties table")
 	flag.BoolVar(&skipCases, "skipCases", false, "skips populating cases_per_prefecture table")
 	flag.BoolVar(&skipTimeline, "skipTimeline", false, "skips populating greece_timeline table")
+	flag.BoolVar(&skipDeaths, "skipDeaths", false, "skips populating deaths_per_municipality table")
 	flag.Parse()
 
 	start := time.Now()
@@ -38,14 +40,15 @@ func main() {
 
 	casesCsvUrl := env.EnvOrDefault("CASES_CSV_URL", casesCsvDefaultUrl)
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
+	deathsCsvUrl := env.EnvOrDefault("DEATHS_PER_MUNICIPALITY_CSV_URL", deathsPerMunicipalityCsvUrl)
 
-	dataManager, err := data.NewService(repo, casesCsvUrl, timelineCsvUrl, false)
+	dataManager, err := data.NewService(repo, casesCsvUrl, timelineCsvUrl, deathsCsvUrl, false)
 	if err != nil {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
 	if !skipGeo {
-		if err := dataManager.PopulateGeo(ctx); err != nil {
+		if err := dataManager.PopulateCounties(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -58,6 +61,12 @@ func main() {
 
 	if !skipTimeline {
 		if err := dataManager.PopulateTimeline(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if !skipDeaths {
+		if err := dataManager.PopulateDeathsPerMunicipality(ctx); err != nil {
 			log.Fatal(err)
 		}
 	}

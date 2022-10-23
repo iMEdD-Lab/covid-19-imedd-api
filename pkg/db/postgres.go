@@ -35,6 +35,7 @@ func migrateDb(dsn string) error {
 	if err != nil {
 		return fmt.Errorf("sql.Open error: %s", err)
 	}
+	defer pg.Close()
 	driver, err := postgres.WithInstance(pg, &postgres.Config{})
 	if err != nil {
 		return fmt.Errorf("cannot init go-migrate: %s", err)

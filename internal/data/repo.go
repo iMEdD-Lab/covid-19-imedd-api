@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gosimple/slug"
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type Repo interface {
 	AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
-	AddGeoRow(ctx context.Context, geoInfo GeoInfo) error
+	AddCounty(ctx context.Context, geoInfo GeoInfo) error
 	GetGeoInfo(ctx context.Context) ([]GeoInfo, error)
 	GetCases(ctx context.Context, filter CasesFilter) ([]Case, error)
 	GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error)
+	AddYearlyDeath(ctx context.Context, munId, deaths, year int) error
+	AddMunicipality(ctx context.Context, name string) (int, error)
 }
 
 type DatesFilter struct {
@@ -37,7 +40,7 @@ func NewPgRepo(conn *pgxpool.Pool) *PgRepo {
 
 func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error {
 	sql := `INSERT INTO cases_per_prefecture (geo_id, date, cases) 
-            VALUES ((SELECT id FROM greece_geo_info WHERE slug=$1), $2, $3) ON CONFLICT DO NOTHING`
+            VALUES ((SELECT id FROM counties WHERE slug=$1), $2, $3) ON CONFLICT DO NOTHING`
 	_, err := r.conn.Exec(ctx, sql, sluggedPrefecture, date, amount)
 	if err != nil {
 		return fmt.Errorf("could not insert row: %v", err)
@@ -61,20 +64,20 @@ func (r *PgRepo) AddFullInfo(ctx context.Context, fi *FullInfo) error {
 	return nil
 }
 
-func (r *PgRepo) AddGeoRow(ctx context.Context, geoInfo GeoInfo) error {
-	sql := `INSERT INTO greece_geo_info (slug, department, prefecture, county_normalized, county, pop_11) 
+func (r *PgRepo) AddCounty(ctx context.Context, geoInfo GeoInfo) error {
+	sql := `INSERT INTO counties (slug, department, prefecture, county_normalized, county, pop_11) 
             VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT DO NOTHING`
 	_, err := r.conn.Exec(ctx, sql, geoInfo.Slug, geoInfo.Department, geoInfo.Prefecture, geoInfo.CountyNormalized,
 		geoInfo.County, geoInfo.Pop11)
 	if err != nil {
-		return fmt.Errorf("could not insert greece_geo_info row: %v", err)
+		return fmt.Errorf("could not insert counties row: %v", err)
 	}
 
 	return nil
 }
 
 func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
-	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from greece_geo_info`
+	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from counties`
 	rows, err := r.conn.Query(ctx, sql)
 	if err != nil {
 		return nil, fmt.Errorf("could not get Geo Info from db: %s", err)
@@ -177,4 +180,25 @@ func (r *PgRepo) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]Ful
 	}
 
 	return fullInfos, nil
+}
+
+func (r *PgRepo) AddYearlyDeath(ctx context.Context, munId, deaths, year int) error {
+	sql := `INSERT INTO deaths_per_municipality_cum (year, municipality_id, deaths_cum) VALUES($1,$2,$3)
+			ON CONFLICT (year, municipality_id) DO UPDATE SET deaths_cum=$3`
+	if _, err := r.conn.Exec(ctx, sql, year, munId, deaths); err != nil {
+		return fmt.Errorf("could not add to deaths_per_municipality_cum: %s", err)
+	}
+
+	return nil
+}
+
+func (r *PgRepo) AddMunicipality(ctx context.Context, name string) (int, error) {
+	sql := `INSERT INTO municipalities (name, slug) VALUES ($1,$2) ON CONFLICT DO NOTHING RETURNING id`
+	row := r.conn.QueryRow(ctx, sql, name, slug.Make(name))
+	var id int
+	if err := row.Scan(&id); err != nil {
+		return id, fmt.Errorf("cannot add municipality: %s", err)
+	}
+
+	return id, nil
 }

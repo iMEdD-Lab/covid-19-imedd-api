@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gosimple/slug"
-
 	"covid19-greece-api/pkg/file"
 	"covid19-greece-api/pkg/vartypes"
+
+	"github.com/gosimple/slug"
 )
 
 // todo reduce some logs
@@ -21,10 +21,14 @@ const (
 )
 
 type Service struct {
-	repo              Repo
-	casesCsvSource    string
-	timelineCsvSource string
-	fromFiles         bool
+	repo      Repo
+	fromFiles bool
+
+	// CSV files, most probably coming from here (https://github.com/iMEdD-Lab/open-data/).
+	// We strictly follow their format.
+	casesCsvSrc              string
+	timelineCsvSrc           string
+	deathsPerMunicipalitySrc string
 }
 
 type FullInfo struct {
@@ -58,20 +62,22 @@ type GeoInfo struct {
 
 func NewService(
 	repo Repo,
-	casesGetSource string,
-	timelineGetSource string,
+	casesSrc string,
+	timelineSrc string,
+	deathsPerMunicipalitySrc string,
 	fromFiles bool,
 ) (*Service, error) {
 	return &Service{
-		repo:              repo,
-		casesCsvSource:    casesGetSource,
-		timelineCsvSource: timelineGetSource,
-		fromFiles:         fromFiles,
+		repo:                     repo,
+		casesCsvSrc:              casesSrc,
+		timelineCsvSrc:           timelineSrc,
+		deathsPerMunicipalitySrc: deathsPerMunicipalitySrc,
+		fromFiles:                fromFiles,
 	}, nil
 }
 
 func (s *Service) PopulateEverything(ctx context.Context) error {
-	if err := s.PopulateGeo(ctx); err != nil {
+	if err := s.PopulateCounties(ctx); err != nil {
 		return fmt.Errorf("error populating geo: %s", err)
 	}
 
@@ -83,13 +89,51 @@ func (s *Service) PopulateEverything(ctx context.Context) error {
 		return fmt.Errorf("error populating timeline: %s", err)
 	}
 
+	if err := s.PopulateDeathsPerMunicipality(ctx); err != nil {
+		return fmt.Errorf("error populating municipalities: %s", err)
+	}
+
 	log.Println("database populated successfully")
 
 	return nil
 }
 
-func (s *Service) PopulateGeo(ctx context.Context) error {
-	data, err := file.ReadCsv(s.casesCsvSource, s.fromFiles)
+func (s *Service) PopulateDeathsPerMunicipality(ctx context.Context) error {
+	data, err := file.ReadCsv(s.deathsPerMunicipalitySrc, s.fromFiles)
+	if err != nil {
+		return fmt.Errorf("error reading csv file: %v", err)
+	}
+	headers := data[0] // first element is always "municipality", then rest of columns are like deaths_covid_{year}
+
+	var years []int
+	for _, h := range headers[1:] {
+		// extract year number from header
+		parts := strings.Split(h, "_")
+		years = append(years, vartypes.StringToInt(parts[len(parts)-1]))
+	}
+
+	for _, d := range data[1:] {
+		name := d[0]
+		id, err := s.repo.AddMunicipality(ctx, name)
+		if err != nil {
+			return err
+		}
+		for i, yearlyDeath := range d[1:] {
+			// match specific amount of deaths to specific year and municipality_id
+			if err := s.repo.AddYearlyDeath(ctx, id, vartypes.StringToInt(yearlyDeath), years[i]); err != nil {
+				return err
+			}
+
+		}
+	}
+
+	log.Printf("added deaths for %d municipalities and years %v", len(data)-1, years)
+
+	return nil
+}
+
+func (s *Service) PopulateCounties(ctx context.Context) error {
+	data, err := file.ReadCsv(s.casesCsvSrc, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
@@ -106,7 +150,7 @@ func (s *Service) PopulateGeo(ctx context.Context) error {
 	}
 
 	for _, row := range data[1:] {
-		err := s.repo.AddGeoRow(ctx, GeoInfo{
+		err := s.repo.AddCounty(ctx, GeoInfo{
 			Slug:             slug.Make(row[2]),
 			Department:       row[0],
 			Prefecture:       row[1],
@@ -117,15 +161,15 @@ func (s *Service) PopulateGeo(ctx context.Context) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		log.Printf("added region %s", row[2])
 	}
+
+	log.Printf("added %d counties", len(data)-1)
 
 	return nil
 }
 
 func (s *Service) PopulateCases(ctx context.Context) error {
-	data, err := file.ReadCsv(s.casesCsvSource, s.fromFiles)
+	data, err := file.ReadCsv(s.casesCsvSrc, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
@@ -170,16 +214,16 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 			if err := s.repo.AddCase(ctx, date, amount, sl); err != nil {
 				log.Fatalf("Error adding death day: %v", err)
 			}
-
-			log.Printf("added case for date %s and region %s", date.Format(simpleDateLayout), sl)
 		}
+
+		log.Printf("added all cases for county %s", row[2])
 	}
 
 	return nil
 }
 
 func (s *Service) PopulateTimeline(ctx context.Context) error {
-	data, err := file.ReadCsv(s.timelineCsvSource, s.fromFiles)
+	data, err := file.ReadCsv(s.timelineCsvSrc, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
 	}
@@ -246,13 +290,24 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 		}
 	}
 
+	end := time.Time{}
+	start := time.Now().Add(1000 * time.Hour * 24)
 	for _, fl := range tl {
 		if err := s.repo.AddFullInfo(ctx, fl); err != nil {
 			log.Fatal(err)
 		}
-
-		log.Printf("added full info for date %s", fl.Date.Format(simpleDateLayout))
+		if fl.Date.Before(start) {
+			start = fl.Date
+		} else if fl.Date.After(end) {
+			end = fl.Date
+		}
 	}
+
+	log.Printf(
+		"added full info for %d dates, from %s until %s", len(tl),
+		start.Format(simpleDateLayout),
+		end.Format(simpleDateLayout),
+	)
 
 	return nil
 }
