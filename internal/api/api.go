@@ -12,6 +12,7 @@ import (
 	"gitea.com/go-chi/cache"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/cors"
 	"github.com/go-chi/httprate"
 
 	"covid19-greece-api/internal/data"
@@ -52,6 +53,11 @@ func (a *Api) initRouter() {
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
 	r.Use(a.cacheMw)
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET"},
+	}))
 
 	// health status
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
