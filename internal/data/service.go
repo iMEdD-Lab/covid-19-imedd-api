@@ -60,6 +60,12 @@ type County struct {
 	Pop11            int    `json:"pop_11"`
 }
 
+type Municipality struct {
+	Id   int    `json:"id"`
+	Name string `json:"name"`
+	Slug string `json:"slug"`
+}
+
 func NewService(
 	repo Repo,
 	casesSrc string,

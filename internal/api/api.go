@@ -79,13 +79,24 @@ func (a *Api) initRouter() {
 		})
 
 		r.Get("/counties", func(w http.ResponseWriter, r *http.Request) {
-			info, err := a.repo.GetCounties(r.Context())
+			counties, err := a.repo.GetCounties(r.Context())
 			if err != nil {
 				log.Println(err)
 				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			a.respond200(w, r, info, false)
+			a.respond200(w, r, counties, false)
+		})
+
+		r.Get("/municipalities", func(w http.ResponseWriter, r *http.Request) {
+			municipalities, err := a.repo.GetMunicipalities(r.Context())
+			if err != nil {
+				log.Println(err)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
+				return
+			}
+			p := getPagination(r.URL.Query(), len(municipalities))
+			a.respond200(w, r, municipalities[p.start:p.end], false)
 		})
 
 		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
@@ -97,19 +108,7 @@ func (a *Api) initRouter() {
 				return
 			}
 			p := getPagination(r.URL.Query(), len(cases))
-			start := (p.page - 1) * p.perPage
-			if start >= len(cases) {
-				a.respond200(w, r, []struct{}{}, false)
-				return
-			}
-			end := start + p.perPage
-			if end > len(cases) {
-				end = len(cases)
-			}
-			log.Println("len cases", p)
-			log.Println("start", start)
-			log.Println("end", end)
-			a.respond200(w, r, cases[start:end], false)
+			a.respond200(w, r, cases[p.start:p.end], false)
 		})
 
 		// helper endpoint

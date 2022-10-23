@@ -37,7 +37,7 @@ func main() {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
-	if env.BoolEnvOrDefault("POPULATE_DB", false) {
+	if env.BoolEnvOrDefault("POPULATE_DB", true) {
 		ticker := time.NewTicker(24 * time.Hour) // every day
 		go func() {
 			for ; true; <-ticker.C {

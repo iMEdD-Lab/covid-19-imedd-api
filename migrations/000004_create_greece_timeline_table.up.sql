@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS greece_timeline
     hospital_discharges       INTEGER,
     estimated_new_rtpcr_tests INTEGER,
     estimated_new_rapid_tests INTEGER,
-    estimated_new_total_tests INTEGER
+    estimated_new_total_tests INTEGER,
+    UNIQUE (date)
 );
