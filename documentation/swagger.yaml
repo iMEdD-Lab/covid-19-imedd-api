@@ -45,6 +45,8 @@ paths:
       tags:
       - endpoints
       parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
       - in: query
         name: geo_id
         schema:
@@ -77,6 +79,8 @@ paths:
       tags:
       - endpoints
       parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
       - in: query
         name: fields
         schema:
@@ -109,6 +113,8 @@ paths:
       tags:
       - endpoints
       parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
       - in: path
         name: field
         required: true
@@ -257,3 +263,18 @@ components:
         estimated_new_total_tests:
           type: integer
           example: 50
+  parameters:
+    page:
+      in: query
+      name: page
+      required: false
+      schema:
+        type: integer
+        example: 1
+    per_page:
+      in: query
+      name: per_page
+      required: false
+      schema:
+        type: integer
+        example: 100

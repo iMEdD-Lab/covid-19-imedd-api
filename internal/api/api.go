@@ -20,6 +20,10 @@ import (
 	"covid19-greece-api/pkg/vartypes"
 )
 
+const (
+	perPageDefault = 100
+)
+
 type Api struct {
 	router *chi.Mux
 	repo   data.Repo
@@ -65,7 +69,7 @@ func (a *Api) initRouter() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// jwt protected routes
+	// authentication protected routes
 	r.Group(func(r chi.Router) {
 		r.Use(a.authMw)
 
@@ -92,7 +96,20 @@ func (a *Api) initRouter() {
 				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			a.respond200(w, r, cases, false)
+			p := getPagination(r.URL.Query(), len(cases))
+			start := (p.page - 1) * p.perPage
+			if start >= len(cases) {
+				a.respond200(w, r, []struct{}{}, false)
+				return
+			}
+			end := start + p.perPage
+			if end > len(cases) {
+				end = len(cases)
+			}
+			log.Println("len cases", p)
+			log.Println("start", start)
+			log.Println("end", end)
+			a.respond200(w, r, cases[start:end], false)
 		})
 
 		// helper endpoint
@@ -125,11 +142,12 @@ func (a *Api) initRouter() {
 				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
+			p := getPagination(r.URL.Query(), len(info))
 			if len(tlf.Fields) > 0 {
-				a.respond200(w, r, keepFields(tlf.Fields, info), false)
+				a.respond200(w, r, keepFields(tlf.Fields, info)[p.start:p.end], false)
 				return
 			}
-			a.respond200(w, r, info, false)
+			a.respond200(w, r, info[p.start:p.end], false)
 		})
 
 		r.Get("/{field}", func(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +158,8 @@ func (a *Api) initRouter() {
 				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			a.respond200(w, r, keepFields([]string{field}, info), false)
+			p := getPagination(r.URL.Query(), len(info))
+			a.respond200(w, r, keepFields([]string{field}, info)[p.start:p.end], false)
 		})
 
 	})
@@ -303,4 +322,51 @@ func (a *Api) respond200(w http.ResponseWriter, r *http.Request, content interfa
 
 type ErrorResp struct {
 	Msg string `json:"message"`
+}
+
+type pagination struct {
+	page    int
+	perPage int
+	start   int
+	end     int
+}
+
+func getPagination(values url.Values, count int) pagination {
+	perPage := perPageDefault
+	page := 1
+
+	if pp, ok := values["per_page"]; ok {
+		perPage = vartypes.StringToInt(pp[0])
+		if perPage <= 0 {
+			perPage = perPageDefault
+		}
+	}
+
+	if p, ok := values["page"]; ok {
+		page = vartypes.StringToInt(p[0])
+		if page <= 0 {
+			page = 1
+		}
+	}
+
+	start := (page - 1) * perPage
+	if start >= count {
+		return pagination{
+			page:    page,
+			perPage: perPage,
+			start:   0,
+			end:     0,
+		}
+	}
+	end := start + perPage
+	if end > count {
+		end = count
+	}
+
+	return pagination{
+		page:    page,
+		perPage: perPage,
+		start:   start,
+		end:     end,
+	}
 }
