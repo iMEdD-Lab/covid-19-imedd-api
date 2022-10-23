@@ -94,9 +94,9 @@ func (r *PgRepo) GetGeoInfo(ctx context.Context) ([]GeoInfo, error) {
 }
 
 type Case struct {
-	GeoId int
-	Date  time.Time
-	Cases int
+	GeoId int       `json:"geo_id"`
+	Date  time.Time `json:"date"`
+	Cases int       `json:"cases"`
 }
 
 func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, error) {
