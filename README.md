@@ -1,1 +1,1 @@
-# COVID19_IMEDD_LAB_APP
+# Covid-19 Data Greece API
