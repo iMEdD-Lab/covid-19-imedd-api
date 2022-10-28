@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS cases_per_prefecture;
