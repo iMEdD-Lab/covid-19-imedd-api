@@ -2,8 +2,6 @@ openapi: 3.0.1
 info:
   version: 1.0.0
   title: Covid19 Greek Data API
-servers:
-- url: http://localhost:8080
 paths:
   /health:
     get:
