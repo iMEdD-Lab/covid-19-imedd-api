@@ -18,7 +18,7 @@ import (
 func InitPostgresDb(ctx context.Context) (*pgxpool.Pool, error) {
 	dsn := env.EnvOrDefault(
 		"POSTGRES_DSN",
-		"postgres://admin:password@localhost:5433/covid19?sslmode=disable",
+		"postgres://admin:password@postgres:5432/covid19?sslmode=disable",
 	)
 	db, err := pgxpool.Connect(ctx, dsn)
 	if err != nil {
