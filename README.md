@@ -86,5 +86,12 @@ No authentication method is used for now.
 
 ## Documentation (Swagger)
 
+If you want to only see the API's documentation without running the whole application via `docker-compose`, simply 
+run:
+
+```shell
+make swagger-start
+```
+
 By opening with your browser `http://localhost:9000` you will see a full descriptive Swagger documentation.
 Information about all the application endpoints available, etc.
