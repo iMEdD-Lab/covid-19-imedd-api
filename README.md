@@ -52,6 +52,13 @@ make container
 
 and let docker do its magic.
 
+### Setup environment variables
+
+Please export the variables below with values of your choice.
+
+- `POSTGRES_USER`: database user
+- `POSTGRES_PASSWORD`: database password
+
 ### Run using docker-compose
 
 Docker-compose will start 3 containers. The API that you just built, the database needed for storing the data, and the
@@ -76,6 +83,33 @@ http://localhost:8080/health
 
 If this URL answers with `hello friend` message, congratulations! Your application is up and running!
 
+### Enter database:
+
+You can see the database contents by typing:
+
+```shell
+docker exec -it covid19-postgres psql -U ${POSTGRES_USER} -d covid19
+```
+
+### Other environment variables you may wish to change (if you know what you are doing!)
+
+#### Data Sources
+
+- `CASES_CSV_URL`: CSV file containing covid
+  cases ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv))
+- `TIMELINE_CSV_URL`: CSV file containing greece COVID19 timeline
+  info ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greeceTimeline.csv))
+- `DEATHS_PER_MUNICIPALITY_CSV_URL`: CSV file containing deaths per greek
+  municipality ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv))
+
+Please keep in mind that if you want to change the data source files, you have to strictly follow their initial format.
+
+#### Other env vars
+
+- `POPULATE_DB`: Choose if the database will be populated with new data at startup and every 24h
+- `PORT`: API port (default 8080)
+- `MIGRATIONS_DIR`: Migrations directory
+
 ## Rate Limiting
 
 We introduced rate limiting set to **100 requests per minute**.
@@ -86,7 +120,7 @@ No authentication method is used for now.
 
 ## Documentation (Swagger)
 
-If you want to only see the API's documentation without running the whole application via `docker-compose`, simply 
+If you want to only see the API's documentation without running the whole application via `docker-compose`, simply
 run:
 
 ```shell
