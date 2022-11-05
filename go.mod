@@ -13,6 +13,7 @@ require (
 	github.com/jackc/pgx/v4 v4.17.2
 	github.com/lib/pq v1.10.7
 	github.com/stretchr/testify v1.8.0
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
 require (

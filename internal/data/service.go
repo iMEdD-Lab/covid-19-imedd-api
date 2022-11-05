@@ -7,10 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"covid19-greece-api/pkg/file"
-	"covid19-greece-api/pkg/vartypes"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/gosimple/slug"
+
+	"covid19-greece-api/pkg/file"
+	"covid19-greece-api/pkg/vartypes"
 )
 
 // todo reduce some logs
@@ -89,23 +91,38 @@ func NewService(
 }
 
 func (s *Service) PopulateEverything(ctx context.Context) error {
-	if err := s.PopulateCounties(ctx); err != nil {
-		return fmt.Errorf("error populating geo: %s", err)
+	start := time.Now()
+	g, _ := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		if err := s.PopulateCounties(ctx); err != nil {
+			return fmt.Errorf("error populating geo: %s", err)
+		}
+		if err := s.PopulateCases(ctx); err != nil {
+			return fmt.Errorf("error populating cases per prefecture: %s", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		if err := s.PopulateTimeline(ctx); err != nil {
+			return fmt.Errorf("error populating timeline: %s", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		if err := s.PopulateDeathsPerMunicipality(ctx); err != nil {
+			return fmt.Errorf("error populating municipalities: %s", err)
+		}
+		return nil
+	})
+
+	if err := g.Wait(); err != nil {
+		return fmt.Errorf("error populating db: %s", err)
 	}
 
-	if err := s.PopulateCases(ctx); err != nil {
-		return fmt.Errorf("error populating cases per prefecture: %s", err)
-	}
-
-	if err := s.PopulateTimeline(ctx); err != nil {
-		return fmt.Errorf("error populating timeline: %s", err)
-	}
-
-	if err := s.PopulateDeathsPerMunicipality(ctx); err != nil {
-		return fmt.Errorf("error populating municipalities: %s", err)
-	}
-
-	log.Println("database populated successfully")
+	log.Printf("database populated successfully after %s", time.Since(start).String())
 
 	return nil
 }

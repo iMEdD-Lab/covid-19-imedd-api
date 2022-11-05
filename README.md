@@ -73,7 +73,7 @@ docker-compose up
 You can also add `-d` parameter to start all containers in the background.
 
 - ***Also note that, if the application is running for the first time, all migrations and data hydration will take
-  place. Approximately 2 minutes are needed for this operation.***
+  place. No more than 2 minutes are needed for this operation.***
 
 ### Healthcheck
 
