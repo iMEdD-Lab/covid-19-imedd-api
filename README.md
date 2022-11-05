@@ -129,3 +129,39 @@ make swagger-start
 
 By opening with your browser `http://localhost:9000` you will see a full descriptive Swagger documentation.
 Information about all the application endpoints available, etc.
+
+## Run locally without Docker
+
+We assume that you have Go 1.19 installed. If not, check [here](https://go.dev/doc/install)
+
+Start a dummy database by typing:
+
+```shell
+make db-start
+```
+
+You can stop it later on by typing `make db-stop`.
+
+You can run the migrations for the database by typing:
+
+```shell
+make migrate
+```
+
+You can populate the db with data by typing:
+
+```shell
+make populate-db
+```
+
+You can enter the db by typing:
+
+```shell
+make db-login
+```
+
+### Test the application
+
+```shell
+make test
+```
