@@ -21,24 +21,29 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	// sleep a bit to avoid race condition with postgres docker start
+	time.Sleep(3 * time.Second)
+
+	// initialize postgres database connection and repository
 	dbConn, err := db.InitPostgresDb(ctx)
 	if err != nil {
 		log.Fatalf("cannot start pg connection: %s", err)
 	}
-
 	repo := data.NewPgRepo(dbConn)
 
 	casesCsvUrl := env.EnvOrDefault("CASES_CSV_URL", casesCsvDefaultUrl)
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
 	deathsCsvUrl := env.EnvOrDefault("DEATHS_PER_MUNICIPALITY_CSV_URL", deathsPerMunicipalityCsvUrl)
 
+	// initialize data manager for database population
 	dataManager, err := data.NewService(repo, casesCsvUrl, timelineCsvUrl, deathsCsvUrl, false)
 	if err != nil {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
+	// populate database with new data at startup and every 24 hours
 	if env.BoolEnvOrDefault("POPULATE_DB", true) {
-		ticker := time.NewTicker(24 * time.Hour) // every day
+		ticker := time.NewTicker(24 * time.Hour)
 		go func() {
 			for ; true; <-ticker.C {
 				if err := dataManager.PopulateEverything(ctx); err != nil {
@@ -49,6 +54,7 @@ func main() {
 	}
 
 	app := api.NewApi(repo)
+	// start serving
 	if err := app.Serve(); err != nil {
 		log.Fatal(err)
 	}

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gitea.com/go-chi/cache"
+
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
@@ -30,6 +31,7 @@ type Api struct {
 	cache  cache.Cache
 }
 
+// NewApi initiates and API struct
 func NewApi(repo data.Repo) *Api {
 	api := Api{
 		repo:  repo,
@@ -40,6 +42,7 @@ func NewApi(repo data.Repo) *Api {
 	return &api
 }
 
+// Serve this!
 func (a *Api) Serve() error {
 	listenAddr := env.EnvOrDefault("PORT", ":8080")
 	log.Printf("Covid 19 GR API started. Listening on %s\n", listenAddr)
@@ -48,16 +51,20 @@ func (a *Api) Serve() error {
 }
 
 func (a *Api) initRouter() {
+	// initiate API router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	// use rate limit of 100 requests per minute
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
 
+	// use cache middleware
 	r.Use(a.cacheMw)
 
+	// be open to CORS requests, allow only GET
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},
 		AllowedMethods: []string{"GET"},
@@ -73,11 +80,13 @@ func (a *Api) initRouter() {
 	r.Group(func(r chi.Router) {
 		r.Use(a.authMw)
 
+		// same as health, but only for authenticated users
 		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("hello friend, you are authenticated!"))
 			w.WriteHeader(http.StatusOK)
 		})
 
+		// helper endpoint
 		r.Get("/counties", func(w http.ResponseWriter, r *http.Request) {
 			counties, err := a.repo.GetCounties(r.Context())
 			if err != nil {
@@ -88,6 +97,7 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, counties, false)
 		})
 
+		// helper endpoint
 		r.Get("/municipalities", func(w http.ResponseWriter, r *http.Request) {
 			municipalities, err := a.repo.GetMunicipalities(r.Context())
 			if err != nil {
@@ -99,6 +109,7 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, municipalities[p.start:p.end], false)
 		})
 
+		// COVID-19 deaths per Greek municipality
 		r.Get("/deaths_per_municipality", func(w http.ResponseWriter, r *http.Request) {
 			f := deathsFilter(r.URL.Query())
 			municipalities, err := a.repo.GetDeathsPerMunicipality(r.Context(), f)
@@ -111,6 +122,7 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, municipalities[p.start:p.end], false)
 		})
 
+		// COVID-19 deaths per Greek county
 		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
 			filter := casesFilter(r.URL.Query())
 			cases, err := a.repo.GetCases(r.Context(), filter)
@@ -145,8 +157,9 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, tlFields, false)
 		})
 
+		// returns full COVID-19 info for every date of a specific period
 		r.Get("/timeline", func(w http.ResponseWriter, r *http.Request) {
-			tlf := getTimelineFilter(r.URL.Query())
+			tlf := timelineFilter(r.URL.Query())
 			info, err := a.repo.GetFromTimeline(r.Context(), tlf.DatesFilter)
 			if err != nil {
 				log.Println(err)
@@ -161,6 +174,7 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, info[p.start:p.end], false)
 		})
 
+		// same as /timeline, but for a specific field (for example, "total_reinfections")
 		r.Get("/{field}", func(w http.ResponseWriter, r *http.Request) {
 			field := chi.URLParam(r, "field")
 			info, err := a.repo.GetFromTimeline(r.Context(), datesFilter(r.URL.Query()))
@@ -178,6 +192,7 @@ func (a *Api) initRouter() {
 	a.router = r
 }
 
+// deathsFilter initializes filter for deaths query
 func deathsFilter(values url.Values) data.DeathsFilter {
 	f := data.DeathsFilter{}
 	for k, v := range values {
@@ -192,7 +207,13 @@ func deathsFilter(values url.Values) data.DeathsFilter {
 	return f
 }
 
-func getTimelineFilter(values url.Values) TimelineFilter {
+type TimelineFilter struct {
+	data.DatesFilter
+	Fields []string
+}
+
+// timelineFilter initializes filter for timeline
+func timelineFilter(values url.Values) TimelineFilter {
 	var fields []string
 	if len(values["fields"]) > 0 {
 		fields = strings.Split(values["fields"][0], ",")
@@ -203,11 +224,36 @@ func getTimelineFilter(values url.Values) TimelineFilter {
 	}
 }
 
-type TimelineFilter struct {
-	data.DatesFilter
-	Fields []string
+// datesFilter initializes filter for start and end date of a time period
+func datesFilter(values url.Values) data.DatesFilter {
+	f := data.DatesFilter{}
+	for k, v := range values {
+		switch k {
+		case "end_date":
+			f.EndDate, _ = time.Parse("2006-01-02", v[0])
+		case "start_date":
+			f.StartDate, _ = time.Parse("2006-01-02", v[0])
+		}
+	}
+
+	return f
 }
 
+// casesFilter initializes filter for cases per county
+func casesFilter(values url.Values) data.CasesFilter {
+	f := data.CasesFilter{}
+	f.DatesFilter = datesFilter(values)
+	for k, v := range values {
+		switch k {
+		case "geo_id":
+			f.GeoId = vartypes.StringToInt(v[0])
+		}
+	}
+
+	return f
+}
+
+// keepFields is a helper function for returning specific fields of timeline full info.
 func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interface{} {
 	var res []map[string]interface{}
 	for _, fi := range fullInfos {
@@ -255,34 +301,7 @@ func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interfa
 	return res
 }
 
-func datesFilter(values url.Values) data.DatesFilter {
-	f := data.DatesFilter{}
-	for k, v := range values {
-		switch k {
-		case "end_date":
-			f.EndDate, _ = time.Parse("2006-01-02", v[0])
-		case "start_date":
-			f.StartDate, _ = time.Parse("2006-01-02", v[0])
-		}
-	}
-
-	return f
-}
-
-func casesFilter(values url.Values) data.CasesFilter {
-	// todo order by?
-	f := data.CasesFilter{}
-	f.DatesFilter = datesFilter(values)
-	for k, v := range values {
-		switch k {
-		case "geo_id":
-			f.GeoId = vartypes.StringToInt(v[0])
-		}
-	}
-
-	return f
-}
-
+// authMw is the authentication middleware function. Currently a bit useless as we don't have authentication
 func (a *Api) authMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := ExtractTokenFromRequest(r)
@@ -305,10 +324,11 @@ func ExtractTokenFromRequest(r *http.Request) string {
 }
 
 func (a *Api) Authenticate(token string) error {
-	// todo fill out authentication method
+	// currently there is no authentication method used.
 	return nil
 }
 
+// cacheMw is the middleware function for caching our responses
 func (a *Api) cacheMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet && a.cache.IsExist(r.URL.RequestURI()) {
@@ -320,6 +340,7 @@ func (a *Api) cacheMw(next http.Handler) http.Handler {
 	})
 }
 
+// respondError helper function for erroneous API responses
 func (a *Api) respondError(w http.ResponseWriter, r *http.Request, statusCode int, content interface{}) {
 	w.WriteHeader(statusCode)
 	bytes, err := json.Marshal(content)
@@ -330,6 +351,7 @@ func (a *Api) respondError(w http.ResponseWriter, r *http.Request, statusCode in
 	w.Write(bytes)
 }
 
+// respondError helper function for successful API responses
 func (a *Api) respond200(w http.ResponseWriter, r *http.Request, content interface{}, fromCache bool) {
 	if !fromCache {
 		a.cache.Put(r.URL.RequestURI(), content, 60*60*24)
@@ -356,6 +378,7 @@ type pagination struct {
 	end     int
 }
 
+// getPagination returns pagination values extracted from the request
 func getPagination(values url.Values, count int) pagination {
 	perPage := perPageDefault
 	page := 1

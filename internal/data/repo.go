@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+// Repository for storing all COVID data.
+
 type Repo interface {
 	AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
