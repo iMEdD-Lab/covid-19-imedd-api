@@ -36,17 +36,17 @@ func (m *RepoMock) EXPECT() *RepoMockMockRecorder {
 }
 
 // AddCase mocks base method.
-func (m *RepoMock) AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error {
+func (m *RepoMock) AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCase", ctx, date, amount, sluggedPrefecture)
+	ret := m.ctrl.Call(m, "AddCase", ctx, date, amount, sluggedCounty)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCase indicates an expected call of AddCase.
-func (mr *RepoMockMockRecorder) AddCase(ctx, date, amount, sluggedPrefecture interface{}) *gomock.Call {
+func (mr *RepoMockMockRecorder) AddCase(ctx, date, amount, sluggedCounty interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCase", reflect.TypeOf((*RepoMock)(nil).AddCase), ctx, date, amount, sluggedPrefecture)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCase", reflect.TypeOf((*RepoMock)(nil).AddCase), ctx, date, amount, sluggedCounty)
 }
 
 // AddCounty mocks base method.

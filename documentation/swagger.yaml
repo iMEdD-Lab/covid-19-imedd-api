@@ -62,7 +62,7 @@ paths:
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/per_page'
       - in: query
-        name: geo_id
+        name: county_id
         schema:
           description: the id of a specific geographical region (see /counties endpoint)
           type: integer
@@ -189,7 +189,7 @@ components:
       description: cases per municipality at a specific date
       type: object
       properties:
-        geo_id:
+        county_id:
           type: integer
           example: 1
         date:

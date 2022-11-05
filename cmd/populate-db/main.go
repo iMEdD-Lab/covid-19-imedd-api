@@ -20,9 +20,9 @@ const (
 )
 
 func main() {
-	var skipGeo, skipCases, skipTimeline, skipDeaths bool
-	flag.BoolVar(&skipGeo, "skipGeo", false, "skips populating counties table")
-	flag.BoolVar(&skipCases, "skipCases", false, "skips populating cases_per_prefecture table")
+	var skipCounties, skipCases, skipTimeline, skipDeaths bool
+	flag.BoolVar(&skipCounties, "skipCounties", false, "skips populating counties table")
+	flag.BoolVar(&skipCases, "skipCases", false, "skips populating cases_per_county table")
 	flag.BoolVar(&skipTimeline, "skipTimeline", false, "skips populating greece_timeline table")
 	flag.BoolVar(&skipDeaths, "skipDeaths", false, "skips populating deaths_per_municipality table")
 	flag.Parse()
@@ -47,7 +47,7 @@ func main() {
 		log.Fatalf("cannot init data manager: %s", err)
 	}
 
-	if !skipGeo {
+	if !skipCounties {
 		if err := dataManager.PopulateCounties(ctx); err != nil {
 			log.Fatal(err)
 		}

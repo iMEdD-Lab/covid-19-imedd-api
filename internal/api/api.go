@@ -245,8 +245,8 @@ func casesFilter(values url.Values) data.CasesFilter {
 	f.DatesFilter = datesFilter(values)
 	for k, v := range values {
 		switch k {
-		case "geo_id":
-			f.GeoId = vartypes.StringToInt(v[0])
+		case "county_id":
+			f.CountyId = vartypes.StringToInt(v[0])
 		}
 	}
 

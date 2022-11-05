@@ -13,7 +13,7 @@ import (
 // Repository for storing all COVID data.
 
 type Repo interface {
-	AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error
+	AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
 	AddCounty(ctx context.Context, county County) error
 	GetCounties(ctx context.Context) ([]County, error)
@@ -32,7 +32,7 @@ type DatesFilter struct {
 
 type CasesFilter struct {
 	DatesFilter
-	GeoId int
+	CountyId int
 }
 
 type PgRepo struct {
@@ -43,10 +43,10 @@ func NewPgRepo(conn *pgxpool.Pool) *PgRepo {
 	return &PgRepo{conn: conn}
 }
 
-func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedPrefecture string) error {
-	sql := `INSERT INTO cases_per_prefecture (geo_id, date, cases) 
-            VALUES ((SELECT id FROM counties WHERE slug=$1), $2, $3) ON CONFLICT (geo_id, date) DO UPDATE SET cases=$3`
-	_, err := r.conn.Exec(ctx, sql, sluggedPrefecture, date, amount)
+func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error {
+	sql := `INSERT INTO cases_per_county (county_id, date, cases) 
+            VALUES ((SELECT id FROM counties WHERE slug=$1), $2, $3) ON CONFLICT (county_id, date) DO UPDATE SET cases=$3`
+	_, err := r.conn.Exec(ctx, sql, sluggedCounty, date, amount)
 	if err != nil {
 		return fmt.Errorf("could not insert row: %v", err)
 	}
@@ -123,20 +123,20 @@ func (r *PgRepo) GetMunicipalities(ctx context.Context) ([]Municipality, error) 
 }
 
 type Case struct {
-	GeoId int       `json:"geo_id"`
-	Date  time.Time `json:"date"`
-	Cases int       `json:"cases"`
+	CountyId int       `json:"county_id"`
+	Date     time.Time `json:"date"`
+	Cases    int       `json:"cases"`
 }
 
 func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, error) {
-	sql := `SELECT geo_id,date,cases FROM cases_per_prefecture WHERE 1=1 `
+	sql := `SELECT county_id,date,cases FROM cases_per_county WHERE 1=1 `
 	counter := 1
 	var args []interface{}
 
-	if filter.GeoId > 0 {
-		sql += fmt.Sprintf(" AND geo_id=$%d ", counter)
+	if filter.CountyId > 0 {
+		sql += fmt.Sprintf(" AND county_id=$%d ", counter)
 		counter++
-		args = append(args, filter.GeoId)
+		args = append(args, filter.CountyId)
 	}
 
 	if !filter.StartDate.IsZero() {
@@ -161,7 +161,7 @@ func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, erro
 	var res []Case
 	for rows.Next() {
 		var c Case
-		if err := rows.Scan(&c.GeoId, &c.Date, &c.Cases); err != nil {
+		if err := rows.Scan(&c.CountyId, &c.Date, &c.Cases); err != nil {
 			return nil, fmt.Errorf("could not scan cases row: %s", err)
 		}
 		res = append(res, c)

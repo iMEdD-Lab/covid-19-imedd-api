@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS cases_per_prefecture;
+DROP TABLE IF EXISTS cases_per_county;

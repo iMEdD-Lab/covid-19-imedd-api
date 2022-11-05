@@ -1,13 +1,13 @@
-CREATE TABLE IF NOT EXISTS cases_per_prefecture
+CREATE TABLE IF NOT EXISTS cases_per_county
 (
-    geo_id INTEGER,
+    county_id INTEGER,
     date   DATE,
     cases  INTEGER,
-    UNIQUE (geo_id, date)
+    UNIQUE (county_id, date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_geo_id ON cases_per_prefecture (geo_id);
-CREATE INDEX IF NOT EXISTS idx_date ON cases_per_prefecture (date);
+CREATE INDEX IF NOT EXISTS idx_county_id ON cases_per_county (county_id);
+CREATE INDEX IF NOT EXISTS idx_date ON cases_per_county (date);
 
-ALTER TABLE cases_per_prefecture
-    ADD CONSTRAINT fk_geo_id FOREIGN KEY (geo_id) REFERENCES counties (id);
+ALTER TABLE cases_per_county
+    ADD CONSTRAINT fk_county_id FOREIGN KEY (county_id) REFERENCES counties (id);

@@ -99,7 +99,7 @@ func (s *Service) PopulateEverything(ctx context.Context) error {
 			return fmt.Errorf("error populating geo: %s", err)
 		}
 		if err := s.PopulateCases(ctx); err != nil {
-			return fmt.Errorf("error populating cases per prefecture: %s", err)
+			return fmt.Errorf("error populating cases per county: %s", err)
 		}
 		return nil
 	})

@@ -8,7 +8,7 @@ It is developed by Sociality in collaboration with iMEdD.
 
 By default, the application retrieves its data from these sources:
 
-- [Cases per prefecture](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv)
+- [Cases per county](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv)
 - [Greece Covid-19 timeline](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greeceTimeline.csv)
 - [Deaths per municipality](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv)
 
