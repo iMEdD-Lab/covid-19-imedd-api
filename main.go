@@ -62,7 +62,7 @@ func main() {
 
 	app := api.NewApi(repo)
 
-	server := &http.Server{Addr: "0.0.0.0:3333", Handler: app.Router}
+	server := &http.Server{Addr: "0.0.0.0:8080", Handler: app.Router}
 
 	// Server run context
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
@@ -93,6 +93,7 @@ func main() {
 	}()
 
 	// Run the server
+	log.Println("Starting COVID19 API")
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("error serving: %s", err)
 	}
