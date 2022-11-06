@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"covid19-greece-api/internal/api"
@@ -53,11 +57,48 @@ func main() {
 		}()
 	}
 
+	exit := make(chan os.Signal, 1)
+	signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
 	app := api.NewApi(repo)
-	// start serving
-	if err := app.Serve(); err != nil {
-		log.Fatal(err)
+
+	server := &http.Server{Addr: "0.0.0.0:3333", Handler: app.Router}
+
+	// Server run context
+	serverCtx, serverStopCtx := context.WithCancel(context.Background())
+
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	go func() {
+		<-sig
+
+		log.Printf("received termination signal")
+
+		// if graceful shutdown lasts longer than 30sec, kill it
+		shutdownCtx, sdCancel := context.WithTimeout(serverCtx, 30*time.Second)
+		defer sdCancel()
+
+		go func() {
+			<-shutdownCtx.Done()
+			if shutdownCtx.Err() == context.DeadlineExceeded {
+				log.Fatal("graceful shutdown timed out.. forcing exit.")
+			}
+		}()
+
+		if err := server.Shutdown(shutdownCtx); err != nil {
+			log.Fatalf("error while shutting down: %s", err)
+		}
+		serverStopCtx()
+	}()
+
+	// Run the server
+	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Fatalf("error serving: %s", err)
 	}
 
-	// todo add graceful stop
+	// Wait for server context to be stopped
+	<-serverCtx.Done()
+
+	log.Printf("server was gracefully stopped. Bye!")
 }

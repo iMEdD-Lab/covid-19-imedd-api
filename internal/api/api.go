@@ -17,7 +17,6 @@ import (
 	"github.com/go-chi/httprate"
 
 	"covid19-greece-api/internal/data"
-	"covid19-greece-api/pkg/env"
 	"covid19-greece-api/pkg/vartypes"
 )
 
@@ -44,7 +43,7 @@ var tlFields = []string{
 }
 
 type Api struct {
-	router *chi.Mux
+	Router *chi.Mux
 	repo   data.Repo
 	cache  cache.Cache
 }
@@ -60,16 +59,8 @@ func NewApi(repo data.Repo) *Api {
 	return &api
 }
 
-// Serve this!
-func (a *Api) Serve() error {
-	listenAddr := env.EnvOrDefault("PORT", ":8080")
-	log.Printf("Covid 19 GR API started. Listening on %s\n", listenAddr)
-
-	return http.ListenAndServe(listenAddr, a.router)
-}
-
 func (a *Api) initRouter() {
-	// initiate API router
+	// initiate API Router
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -190,7 +181,7 @@ func (a *Api) initRouter() {
 
 	})
 
-	a.router = r
+	a.Router = r
 }
 
 // deathsFilter initializes filter for deaths query
