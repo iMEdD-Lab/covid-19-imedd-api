@@ -11,4 +11,5 @@ jobs:
     steps:
     - name: testing
       uses: actions/checkout@v3
-      run: go test -v ./...
+      script:
+      - go test -v ./...
