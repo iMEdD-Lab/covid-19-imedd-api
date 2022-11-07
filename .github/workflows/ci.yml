@@ -6,10 +6,10 @@ on:
 
 jobs:
   test:
-    name: test
+    name: checkout and test
     runs-on: golang:1.19-alpine
     steps:
-    - name: testing
-      uses: actions/checkout@v3
-      script:
-      - go test -v ./...
+    - uses: actions/checkout@v3
+
+    - name: Test
+      run: go test -v ./...
