@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS demography_per_age;
