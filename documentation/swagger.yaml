@@ -183,6 +183,40 @@ paths:
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/singleFieldCovidInfo'
+  /demographics:
+    get:
+      summary: get covid19 demographic info per date and per age category
+      tags:
+      - covid19
+      parameters:
+      - $ref: '#/components/parameters/page'
+      - $ref: '#/components/parameters/per_page'
+      - in: query
+        name: category
+        schema:
+          description: filter by specific category. Available categories are 0-17,18-39-40-64,65+
+          type: string
+          example: 18-39
+      - in: query
+        name: start_date
+        schema:
+          description: the first date of the timeline period
+          type: string
+          example: 2022-01-01
+      - in: query
+        name: end_date
+        schema:
+          description: the last date of the timeline period
+          type: string
+          example: 2022-01-10
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                - $ref: '#/components/schemas/demographicInfo'
 components:
   schemas:
     municipalityCases:
@@ -339,6 +373,43 @@ components:
           type: integer
           example: 50
         estimated_new_total_tests:
+          type: integer
+          example: 50
+    demographicInfo:
+      description: daily covid19 demographic info per age category
+      type: object
+      properties:
+        date:
+          type: string
+          example: "2021-01-01"
+        category:
+          type: string
+          example: 18-39
+        cases:
+          type: integer
+          example: 50
+        deaths:
+          type: integer
+          example: 50
+        intensive:
+          type: integer
+          example: 50
+        discharged:
+          type: integer
+          example: 50
+        hospitalized:
+          type: integer
+          example: 50
+        hospitalized_in_icu:
+          type: integer
+          example: 50
+        passed_away:
+          type: integer
+          example: 50
+        recovered:
+          type: integer
+          example: 50
+        treated_at_home:
           type: integer
           example: 50
   parameters:
