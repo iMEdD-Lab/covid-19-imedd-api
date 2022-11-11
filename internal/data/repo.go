@@ -23,6 +23,8 @@ type Repo interface {
 	AddMunicipality(ctx context.Context, name string) (int, error)
 	GetMunicipalities(ctx context.Context) ([]Municipality, error)
 	GetDeathsPerMunicipality(ctx context.Context, filter DeathsFilter) ([]YearlyDeaths, error)
+	GetDemographicInfo(ctx context.Context, filter DemographicFilter) ([]DemographicInfo, error)
+	AddDemographicInfo(ctx context.Context, info DemographicInfo) error
 }
 
 type DatesFilter struct {

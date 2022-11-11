@@ -49,7 +49,7 @@ migrate-new: ## create a new database migration
 
 .PHONY: test
 test:
-	go test ./...
+	go test -v ./internal/... ./pkg/...
 
 .PHONY: mocks
 mocks:

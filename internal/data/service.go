@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,7 @@ type Service struct {
 	casesCsvSrc              string
 	timelineCsvSrc           string
 	deathsPerMunicipalitySrc string
+	demographicsSrc          string
 }
 
 type FullInfo struct {
@@ -93,6 +95,7 @@ func NewService(
 	casesSrc string,
 	timelineSrc string,
 	deathsPerMunicipalitySrc string,
+	demographicsSrc string,
 	fromFiles bool,
 ) (*Service, error) {
 	return &Service{
@@ -100,6 +103,7 @@ func NewService(
 		casesCsvSrc:              casesSrc,
 		timelineCsvSrc:           timelineSrc,
 		deathsPerMunicipalitySrc: deathsPerMunicipalitySrc,
+		demographicsSrc:          demographicsSrc,
 		fromFiles:                fromFiles,
 	}, nil
 }
@@ -128,6 +132,13 @@ func (s *Service) PopulateEverything(ctx context.Context) error {
 	g.Go(func() error {
 		if err := s.PopulateDeathsPerMunicipality(ctx); err != nil {
 			return fmt.Errorf("error populating municipalities: %s", err)
+		}
+		return nil
+	})
+
+	g.Go(func() error {
+		if err := s.PopulateDemographic(ctx); err != nil {
+			return fmt.Errorf("error populating demographics: %s", err)
 		}
 		return nil
 	})
@@ -351,6 +362,79 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 		start.Format(simpleDateLayout),
 		end.Format(simpleDateLayout),
 	)
+
+	return nil
+}
+
+func (s *Service) PopulateDemographic(ctx context.Context) error {
+	data, err := file.ReadCsv(s.demographicsSrc, s.fromFiles)
+	if err != nil {
+		log.Fatalf("Error reading csv file: %s", err)
+	}
+
+	for i := 1; i < len(data); i++ {
+		line := data[i]
+		d, err := time.Parse("2006-01-02", line[1])
+		if err != nil {
+			return fmt.Errorf("invalid date: %s, at line %d", line[1], i)
+		}
+		cases, err := strconv.Atoi(line[3])
+		if err != nil {
+			return fmt.Errorf("bad cases number %s, line %d", line[3], i)
+		}
+		deaths, err := strconv.Atoi(line[4])
+		if err != nil {
+			return fmt.Errorf("bad deaths number %s, line %d", line[4], i)
+		}
+		intensive, err := strconv.Atoi(line[5])
+		if err != nil {
+			return fmt.Errorf("bad intensive number %s, line %d", line[5], i)
+		}
+		discharged, err := strconv.Atoi(line[6])
+		if err != nil {
+			return fmt.Errorf("bad discharged number %s, line %d", line[6], i)
+		}
+		hospitalized, err := strconv.Atoi(line[7])
+		if err != nil {
+			return fmt.Errorf("bad hospitalized number %s, line %d", line[7], i)
+		}
+		hospitalizedIcu, err := strconv.Atoi(line[8])
+		if err != nil {
+			return fmt.Errorf("bad hospitalized_icu number %s, line %d", line[8], i)
+		}
+		passedAway, err := strconv.Atoi(line[9])
+		if err != nil {
+			return fmt.Errorf("bad passed_away number %s, line %d", line[9], i)
+		}
+		recovered, err := strconv.Atoi(line[10])
+		if err != nil {
+			return fmt.Errorf("bad recovered number %s, line %d", line[10], i)
+		}
+		treatedAtHome, err := strconv.Atoi(line[11])
+		if err != nil {
+			return fmt.Errorf("bad treated_at_home number %s, line %d", line[11], i)
+		}
+
+		info := DemographicInfo{
+			Date:              d,
+			Category:          line[2],
+			Cases:             cases,
+			Deaths:            deaths,
+			Intensive:         intensive,
+			Discharged:        discharged,
+			Hospitalized:      hospitalized,
+			HospitalizedInIcu: hospitalizedIcu,
+			PassedAway:        passedAway,
+			Recovered:         recovered,
+			TreatedAtHome:     treatedAtHome,
+		}
+
+		if err := s.repo.AddDemographicInfo(ctx, info); err != nil {
+			return fmt.Errorf("cannot add demographic info: %s", err)
+		}
+	}
+
+	log.Printf("added %d demographic information entries", len(data)-1)
 
 	return nil
 }

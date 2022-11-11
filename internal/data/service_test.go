@@ -31,6 +31,7 @@ func (s *DataServiceSuite) SetupSuite() {
 		filepath.Join(path, "test_csv/testing_cases.csv"),
 		filepath.Join(path, "test_csv/testing_timeline.csv"),
 		filepath.Join(path, "test_csv/testing_deaths.csv"),
+		filepath.Join(path, "test_csv/testing_demographics.csv"),
 		true,
 	)
 	assert.Nil(s.T(), err)
@@ -175,4 +176,38 @@ func (s *DataServiceSuite) TestPopulateMunicipalities() {
 	s.repoMock.EXPECT().AddYearlyDeath(gomock.Any(), 60, 30, 2034)
 
 	assert.Nil(s.T(), s.srv.PopulateDeathsPerMunicipality(ctx))
+}
+
+func (s *DataServiceSuite) TestPopulateDemographics() {
+	ctx := context.Background()
+	info1 := DemographicInfo{
+		Date:              time.Date(2020, 1, 25, 0, 0, 0, 0, time.UTC),
+		Category:          "0-17",
+		Cases:             1,
+		Deaths:            2,
+		Intensive:         3,
+		Discharged:        4,
+		Hospitalized:      5,
+		HospitalizedInIcu: 6,
+		PassedAway:        7,
+		Recovered:         8,
+		TreatedAtHome:     9,
+	}
+	info2 := DemographicInfo{
+		Date:              time.Date(2020, 1, 26, 0, 0, 0, 0, time.UTC),
+		Category:          "18-39",
+		Cases:             10,
+		Deaths:            11,
+		Intensive:         12,
+		Discharged:        13,
+		Hospitalized:      14,
+		HospitalizedInIcu: 15,
+		PassedAway:        16,
+		Recovered:         17,
+		TreatedAtHome:     18,
+	}
+	s.repoMock.EXPECT().AddDemographicInfo(gomock.Any(), info1)
+	s.repoMock.EXPECT().AddDemographicInfo(gomock.Any(), info2)
+
+	assert.Nil(s.T(), s.srv.PopulateDemographic(ctx))
 }
