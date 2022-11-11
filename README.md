@@ -11,6 +11,7 @@ By default, the application retrieves its data from these sources:
 - [Cases per county](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv)
 - [Greece Covid-19 timeline](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greeceTimeline.csv)
 - [Deaths per municipality](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv)
+- [Demographic information](https://github.com/Sandbird/covid19-Greece/blob/master/demography_total_details.csv)
 
 Of course, other sources can be also used for feeding it, by changing the application's environment variables
 (see below).
@@ -25,6 +26,7 @@ Here is a short description of the application's endpoints. More detailed info i
 - `/deaths_per_municipality`: COVID-19 deaths per Greek municipality
 - `/cases`: COVID-19 deaths per Greek county
 - `/timeline`: Gets full COVID-19 info for every date of a specific period
+- `/demographics`: Gets full COVID-19 demographics info for every date and for a certain age category(0-17,18-39,40-64,65+)
 
 #### Helper Endpoints
 
@@ -101,6 +103,7 @@ docker exec -it covid19-postgres psql -U ${POSTGRES_USER} -d covid19
   info ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greeceTimeline.csv))
 - `DEATHS_PER_MUNICIPALITY_CSV_URL`: CSV file containing deaths per greek
   municipality ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv))
+- `DEMOGRAPHICS_CSV_URL`: CSV file containing demographics information per date and per age category ([default](https://github.com/Sandbird/covid19-Greece/blob/master/demography_total_details.csv))
 
 Please keep in mind that if you want to change the data source files, you have to strictly follow their initial format.
 
