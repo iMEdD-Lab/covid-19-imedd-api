@@ -276,3 +276,63 @@ func (r *PgRepo) GetDeathsPerMunicipality(ctx context.Context, filter DeathsFilt
 
 	return res, nil
 }
+
+func (r *PgRepo) AddDemographicInfo(ctx context.Context, info DemographicInfo) error {
+	sql := `INSERT INTO demography_per_age (date,category,cases,deaths,intensive,discharged,hospitalized,
+            hospitalized_in_icu,passed_away,recovered,treated_at_home) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) 
+            ON CONFLICT (date,category) DO UPDATE SET cases=$3,deaths=$4,intensive=$5,discharged=$6,hospitalized=$7, 
+            hospitalized_in_icu=$8,passed_away=$9,recovered=$10,treated_at_home=$11`
+	_, err := r.conn.Exec(ctx, sql, info.Date, info.Category, info.Cases, info.Deaths, info.Intensive, info.Discharged,
+		info.Hospitalized, info.HospitalizedInIcu, info.PassedAway, info.Recovered, info.TreatedAtHome)
+	if err != nil {
+		return fmt.Errorf("cannot add demographic info: %s", err)
+	}
+	return nil
+}
+
+type DemographicFilter struct {
+	DatesFilter
+	Category string
+}
+
+func (r *PgRepo) GetDemographicInfo(ctx context.Context, filter DemographicFilter) ([]DemographicInfo, error) {
+	sql := `SELECT date,category,cases,deaths,intensive,discharged,hospitalized,hospitalized_in_icu,passed_away,
+       recovered,treated_at_home FROM demography_per_age WHERE 1=1 `
+	var args []interface{}
+	counter := 1
+	if !filter.StartDate.IsZero() {
+		sql += fmt.Sprintf(" AND date >= $%d ", counter)
+		counter++
+		args = append(args, filter.StartDate)
+	}
+
+	if !filter.EndDate.IsZero() {
+		sql += fmt.Sprintf(" AND date <= $%d ", counter)
+		counter++
+		args = append(args, filter.EndDate)
+	}
+
+	if len(filter.Category) > 0 {
+		sql += fmt.Sprintf(" AND category = $%d ", counter)
+		counter++
+		args = append(args, filter.Category)
+	}
+
+	sql += " ORDER BY date ASC "
+
+	rows, err := r.conn.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get demographic info: %s", err)
+	}
+	var res []DemographicInfo
+	for rows.Next() {
+		var info DemographicInfo
+		if err := rows.Scan(&info.Date, &info.Category, &info.Cases, &info.Deaths, &info.Intensive, &info.Discharged,
+			&info.Hospitalized, &info.HospitalizedInIcu, &info.PassedAway, &info.Recovered,
+			&info.TreatedAtHome); err != nil {
+			return nil, fmt.Errorf("cannot scan demographic info: %s", err)
+		}
+		res = append(res, info)
+	}
+	return res, nil
+}

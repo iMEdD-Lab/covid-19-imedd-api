@@ -74,6 +74,20 @@ type YearlyDeaths struct {
 	Year   int `json:"year"`
 }
 
+type DemographicInfo struct {
+	Date              time.Time `json:"date"`
+	Category          string    `json:"category"`
+	Cases             int       `json:"cases"`
+	Deaths            int       `json:"deaths"`
+	Intensive         int       `json:"intensive"`
+	Discharged        int       `json:"discharged"`
+	Hospitalized      int       `json:"hospitalized"`
+	HospitalizedInIcu int       `json:"hospitalized_in_icu"`
+	PassedAway        int       `json:"passed_away"`
+	Recovered         int       `json:"recovered"`
+	TreatedAtHome     int       `json:"treated_at_home"`
+}
+
 func NewService(
 	repo Repo,
 	casesSrc string,
