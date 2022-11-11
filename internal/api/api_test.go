@@ -351,3 +351,51 @@ func (s *ApiSuite) TestGetTimelineOneField() {
 	assert.NotContains(s.T(), info[0], "total_reinfections")
 	assert.Equal(s.T(), info[1]["beds_occupancy"], float64(1200))
 }
+
+func (s *ApiSuite) TestGetDemographics() {
+	expected := []data.DemographicInfo{{
+		Date:              time.Date(2021, 1, 1, 0, 0, 0, 0, time.Local),
+		Category:          "0-17",
+		Cases:             1,
+		Deaths:            2,
+		Intensive:         3,
+		Discharged:        4,
+		Hospitalized:      5,
+		HospitalizedInIcu: 6,
+		PassedAway:        7,
+		Recovered:         8,
+		TreatedAtHome:     9,
+	}, {
+		Date:              time.Date(2021, 1, 2, 0, 0, 0, 0, time.Local),
+		Category:          "18-39",
+		Cases:             10,
+		Deaths:            11,
+		Intensive:         12,
+		Discharged:        13,
+		Hospitalized:      14,
+		HospitalizedInIcu: 15,
+		PassedAway:        16,
+		Recovered:         17,
+		TreatedAtHome:     18,
+	}}
+	s.repo.EXPECT().GetDemographicInfo(gomock.Any(), data.DemographicFilter{
+		DatesFilter: data.DatesFilter{
+			StartDate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+			EndDate:   time.Date(2021, 1, 10, 0, 0, 0, 0, time.UTC),
+		},
+		Category: "18-39",
+	}).Times(1).Return(expected, nil)
+	req, _ := http.NewRequest(http.MethodGet, "/demographics?start_date=2021-01-01&end_date=2021-01-10&category=18-39", nil)
+	w := httptest.NewRecorder()
+	s.api.Router.ServeHTTP(w, req)
+	resp := w.Result()
+	assert.Equal(s.T(), 200, w.Code)
+	bodyBytes, err := io.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	assert.Nil(s.T(), err)
+
+	var info []data.DemographicInfo
+	err = json.Unmarshal(bodyBytes, &info)
+	assert.Nil(s.T(), err)
+	assert.Equal(s.T(), expected, info)
+}

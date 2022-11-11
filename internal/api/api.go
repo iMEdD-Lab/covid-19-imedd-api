@@ -179,9 +179,35 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, keepFields([]string{field}, info)[p.start:p.end], false)
 		})
 
+		// returns COVID19 demographics info by date
+		r.Get("/demographics", func(w http.ResponseWriter, r *http.Request) {
+			info, err := a.repo.GetDemographicInfo(r.Context(), demographicsFilter(r.URL.Query()))
+			if err != nil {
+				log.Println(err)
+				a.respondError(w, r, http.StatusInternalServerError, nil)
+				return
+			}
+			p := getPagination(r.URL.Query(), len(info))
+			a.respond200(w, r, info[p.start:p.end], false)
+		})
+
 	})
 
 	a.Router = r
+}
+
+// demographicsFilter initializes filter for demographics query
+func demographicsFilter(values url.Values) data.DemographicFilter {
+	f := data.DemographicFilter{}
+	for k, v := range values {
+		switch k {
+		case "category":
+			f.Category = v[0]
+		}
+	}
+	f.DatesFilter = datesFilter(values)
+
+	return f
 }
 
 // deathsFilter initializes filter for deaths query
