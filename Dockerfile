@@ -10,6 +10,8 @@ RUN make
 FROM alpine:latest
 
 COPY --from=build /build/covid19-greece-api /usr/bin
+COPY --from=build /build/internal/data/municipalities_ypes.csv /root/municipalities_ypes.csv
+COPY --from=build /build/migrations /root/migrations
 
 RUN apk add --no-cache
 EXPOSE 8080
