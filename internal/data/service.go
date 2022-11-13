@@ -65,9 +65,12 @@ type County struct {
 }
 
 type Municipality struct {
-	Id   int    `json:"id"`
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	Id           int    `json:"id"`
+	Name         string `json:"name"`
+	Slug         string `json:"slug"`
+	Code         string `json:"code"`
+	Population11 int    `json:"pop_11"`
+	Population21 int    `json:"pop_21"`
 }
 
 type YearlyDeaths struct {
@@ -181,7 +184,7 @@ func (s *Service) PopulateDeathsPerMunicipality(ctx context.Context) error {
 		}
 	}
 
-	log.Printf("added deaths for %d municipalities and years %v", len(data)-1, years)
+	log.Printf("added %d municipalities and their deaths info for years %v", len(data)-1, years)
 
 	return nil
 }

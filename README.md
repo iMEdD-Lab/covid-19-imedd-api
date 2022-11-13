@@ -104,6 +104,7 @@ docker exec -it covid19-postgres psql -U ${POSTGRES_USER} -d covid19
 - `DEATHS_PER_MUNICIPALITY_CSV_URL`: CSV file containing deaths per greek
   municipality ([default](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv))
 - `DEMOGRAPHICS_CSV_URL`: CSV file containing demographics information per date and per age category ([default](https://github.com/Sandbird/covid19-Greece/blob/master/demography_total_details.csv))
+- `YPES_MUNICIPALITIES_CSV_FILE`: CSV file containing municipalities together with their identification code, and populations of 2021 and 2022 (default file is `internal/data/municipalities_ypes.csv`)
 
 Please keep in mind that if you want to change the data source files, you have to strictly follow their initial format.
 

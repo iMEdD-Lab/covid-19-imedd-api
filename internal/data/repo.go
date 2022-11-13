@@ -3,11 +3,18 @@ package data
 import (
 	"context"
 	"fmt"
+	"log"
+	"path"
+	"path/filepath"
+	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/gosimple/slug"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+
+	"covid19-greece-api/pkg/file"
 )
 
 // Repository for storing all COVID data.
@@ -27,6 +34,14 @@ type Repo interface {
 	AddDemographicInfo(ctx context.Context, info DemographicInfo) error
 }
 
+type YpesMunicipality struct {
+	Name         string
+	Slug         string
+	Code         string
+	Population11 int
+	Population21 int
+}
+
 type DatesFilter struct {
 	StartDate time.Time
 	EndDate   time.Time
@@ -38,11 +53,51 @@ type CasesFilter struct {
 }
 
 type PgRepo struct {
-	conn *pgxpool.Pool
+	conn    *pgxpool.Pool
+	csvInfo map[string]YpesMunicipality
 }
 
-func NewPgRepo(conn *pgxpool.Pool) *PgRepo {
-	return &PgRepo{conn: conn}
+func NewPgRepo(conn *pgxpool.Pool, municipalitiesYpesCsvFile string) (*PgRepo, error) {
+	ypesInfo := make(map[string]YpesMunicipality)
+	if len(municipalitiesYpesCsvFile) == 0 {
+		_, filename, _, ok := runtime.Caller(0)
+		if !ok {
+			return nil, fmt.Errorf("runtime.Caller error")
+		}
+		municipalitiesYpesCsvFile = filepath.Join(path.Dir(filename), "municipalities_ypes.csv")
+	}
+
+	data, err := file.ReadCsv(municipalitiesYpesCsvFile, true)
+	if err != nil {
+		return nil, fmt.Errorf("cannot read municipalities_ypes.csv: %s", err)
+	}
+	for i := 1; i < len(data); i++ {
+		name := data[i][1]
+		slugged := data[i][2]
+		code := data[i][3]
+		population11, err := strconv.Atoi(data[i][4])
+		if err != nil {
+			return nil, fmt.Errorf("municipalities_ypes.csv error at line %d: cannot convert %s to int: %s",
+				i, data[i][4], err)
+		}
+		population21, err := strconv.Atoi(data[i][5])
+		if err != nil {
+			return nil, fmt.Errorf("municipalities_ypes.csv error at line %d: cannot convert %s to int: %s",
+				i, data[i][5], err)
+		}
+		ypesInfo[slugged] = YpesMunicipality{
+			Name:         name,
+			Slug:         slugged,
+			Code:         code,
+			Population11: population11,
+			Population21: population21,
+		}
+	}
+	log.Printf("municipality info from YPES loaded successfully")
+	return &PgRepo{
+		conn:    conn,
+		csvInfo: ypesInfo,
+	}, nil
 }
 
 func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error {
@@ -107,7 +162,7 @@ func (r *PgRepo) GetCounties(ctx context.Context) ([]County, error) {
 }
 
 func (r *PgRepo) GetMunicipalities(ctx context.Context) ([]Municipality, error) {
-	sql := `SELECT id,name,slug FROM municipalities`
+	sql := `SELECT id,name,slug,code,pop_11,pop_21 FROM municipalities`
 	rows, err := r.conn.Query(ctx, sql)
 	if err != nil {
 		return nil, fmt.Errorf("cannot get from municipalities table: %s", err)
@@ -115,12 +170,11 @@ func (r *PgRepo) GetMunicipalities(ctx context.Context) ([]Municipality, error) 
 	var res []Municipality
 	for rows.Next() {
 		var m Municipality
-		if err := rows.Scan(&m.Id, &m.Name, &m.Slug); err != nil {
+		if err := rows.Scan(&m.Id, &m.Name, &m.Slug, &m.Code, &m.Population11, &m.Population21); err != nil {
 			return nil, fmt.Errorf("could not scan municipalities row: %s", err)
 		}
 		res = append(res, m)
 	}
-
 	return res, nil
 }
 
@@ -221,9 +275,10 @@ func (r *PgRepo) AddYearlyDeath(ctx context.Context, munId, deaths, year int) er
 }
 
 func (r *PgRepo) AddMunicipality(ctx context.Context, name string) (int, error) {
-	sql := `SELECT id from municipalities WHERE name=$1`
+	slugged := slug.Make(name)
+	sql := `SELECT id from municipalities WHERE slug=$1`
 	var id int
-	row := r.conn.QueryRow(ctx, sql, name)
+	row := r.conn.QueryRow(ctx, sql, slugged)
 	err := row.Scan(&id)
 	if err == nil {
 		return id, nil
@@ -231,9 +286,17 @@ func (r *PgRepo) AddMunicipality(ctx context.Context, name string) (int, error) 
 	if err != nil && err != pgx.ErrNoRows {
 		return id, fmt.Errorf("cannot get municipality by name: %s", err)
 	}
-	sql = `INSERT INTO municipalities (name, slug) VALUES ($1,$2) ON CONFLICT (name) DO NOTHING RETURNING id`
-	row = r.conn.QueryRow(ctx, sql, name, slug.Make(name))
+	sql = `INSERT INTO municipalities (name, slug, code, pop_11, pop_21) VALUES ($1,$2,$3,$4,$5)  
+		   ON CONFLICT DO NOTHING RETURNING id`
+	fromCsv, ok := r.csvInfo[slugged]
+	if !ok {
+		return 0, fmt.Errorf("name %s, slugged %s, not found in municipalities ypes csv", name, slugged)
+	}
+	row = r.conn.QueryRow(ctx, sql, name, slugged, fromCsv.Code, fromCsv.Population11, fromCsv.Population21)
 	if err := row.Scan(&id); err != nil {
+		if err == pgx.ErrNoRows {
+			fmt.Println()
+		}
 		return id, fmt.Errorf("cannot add municipality: %s", err)
 	}
 

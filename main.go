@@ -34,7 +34,10 @@ func main() {
 	if err != nil {
 		log.Fatalf("cannot start pg connection: %s", err)
 	}
-	repo := data.NewPgRepo(dbConn)
+	repo, err := data.NewPgRepo(dbConn, os.Getenv("YPES_MUNICIPALITIES_CSV_FILE"))
+	if err != nil {
+		log.Fatalf("cannot initialize data repository: %s", err)
+	}
 
 	casesCsvUrl := env.EnvOrDefault("CASES_CSV_URL", casesCsvDefaultUrl)
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
