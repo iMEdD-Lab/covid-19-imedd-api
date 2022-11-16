@@ -75,8 +75,14 @@ func (a *Api) initRouter() {
 
 	// be open to CORS requests, allow only GET
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
-		AllowedMethods: []string{"GET"},
+		AllowedOrigins:     []string{"*"},
+		AllowOriginFunc:    func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:     []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:     []string{"Link"},
+		AllowCredentials:   true,
+		OptionsPassthrough: true,
+		MaxAge:             3599, // Maximum value not ignored by any of major browsers
 	}))
 
 	// health status
