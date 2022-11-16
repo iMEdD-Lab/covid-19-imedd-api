@@ -366,6 +366,8 @@ func (a *Api) respondError(w http.ResponseWriter, r *http.Request, statusCode in
 		log.Println("failed to marshal ErrorResp:", err)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Write(bytes)
 }
 
@@ -382,6 +384,7 @@ func (a *Api) respond200(w http.ResponseWriter, r *http.Request, content interfa
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	w.Header().Set("Content-Length", strconv.Itoa(len(bytes)))
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Write(bytes)
 }
 
