@@ -366,6 +366,9 @@ func (a *Api) cacheMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet && a.cache.IsExist(r.URL.RequestURI()) {
 			content := a.cache.Get(r.URL.RequestURI())
+			b, _ := json.Marshal(content)
+			w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+			w.Header().Set("Access-Control-Allow-Origin", "*")
 			a.respond200(w, r, content, true)
 			return
 		}
