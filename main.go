@@ -20,6 +20,7 @@ const (
 	timelineDefaultCsvUrl       = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/greeceTimeline.csv`
 	deathsPerMunicipalityCsvUrl = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv`
 	demographicsUrl             = `https://raw.githubusercontent.com/Sandbird/covid19-Greece/master/demography_total_details.csv`
+	wasteUrl                    = `https://raw.githubusercontent.com/iMEdD-Lab/open-data/master/COVID-19/viral_waste_water.csv`
 )
 
 func main() {
@@ -43,6 +44,7 @@ func main() {
 	timelineCsvUrl := env.EnvOrDefault("TIMELINE_CSV_URL", timelineDefaultCsvUrl)
 	deathsCsvUrl := env.EnvOrDefault("DEATHS_PER_MUNICIPALITY_CSV_URL", deathsPerMunicipalityCsvUrl)
 	demographicsCsvUrl := env.EnvOrDefault("DEMOGRAPHICS_CSV_URL", demographicsUrl)
+	wasteCsvUrl := env.EnvOrDefault("WASTE_CSV_URL", wasteUrl)
 
 	// initialize data manager for database population
 	dataManager, err := data.NewService(
@@ -51,6 +53,7 @@ func main() {
 		timelineCsvUrl,
 		deathsCsvUrl,
 		demographicsCsvUrl,
+		wasteCsvUrl,
 		false,
 	)
 	if err != nil {

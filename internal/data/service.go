@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"covid19-greece-api/pkg/date"
+
 	"golang.org/x/sync/errgroup"
 
 	"github.com/gosimple/slug"
@@ -33,6 +35,7 @@ type Service struct {
 	timelineCsvSrc           string
 	deathsPerMunicipalitySrc string
 	demographicsSrc          string
+	wasteSrc                 string
 }
 
 type FullInfo struct {
@@ -53,6 +56,8 @@ type FullInfo struct {
 	EstimatedNewRapidTests int       `json:"estimated_new_rapid_tests"`
 	EstimatedNewTotalTests int       `json:"estimated_new_total_tests"`
 	CasesCum               int       `json:"cases_cum"`
+	WasteHighestPlace      string    `json:"waste_highest_place"`
+	WasteHighestPercent    float64   `json:"waste_highest_percent"`
 }
 
 type County struct {
@@ -100,6 +105,7 @@ func NewService(
 	timelineSrc string,
 	deathsPerMunicipalitySrc string,
 	demographicsSrc string,
+	wasteSrc string,
 	fromFiles bool,
 ) (*Service, error) {
 	return &Service{
@@ -108,6 +114,7 @@ func NewService(
 		timelineCsvSrc:           timelineSrc,
 		deathsPerMunicipalitySrc: deathsPerMunicipalitySrc,
 		demographicsSrc:          demographicsSrc,
+		wasteSrc:                 wasteSrc,
 		fromFiles:                fromFiles,
 	}, nil
 }
@@ -350,11 +357,21 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 		}
 	}
 
+	wasteInfo, err := s.GetWasteDates()
+	if err != nil {
+		return fmt.Errorf("getting waste info error: %s", err)
+	}
+
 	end := time.Time{}
 	start := time.Now().Add(1000 * time.Hour * 24)
 	for _, fl := range tl {
+		info, ok := wasteInfo[fl.Date.Format(simpleDateLayout)]
+		if ok {
+			fl.WasteHighestPercent = info.Percentage
+			fl.WasteHighestPlace = info.Place
+		}
 		if err := s.repo.AddFullInfo(ctx, fl); err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot add full info: %s", err)
 		}
 		if fl.Date.Before(start) {
 			start = fl.Date
@@ -443,6 +460,63 @@ func (s *Service) PopulateDemographic(ctx context.Context) error {
 	log.Printf("added %d demographic information entries", len(data)-1)
 
 	return nil
+}
+
+type WasteInfo struct {
+	Place      string
+	Percentage float64
+}
+
+func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
+	data, err := file.ReadCsv(s.wasteSrc, s.fromFiles)
+	if err != nil {
+		log.Fatalf("Error reading csv file: %s", err)
+	}
+
+	calc := make(map[time.Time]map[string]float64)
+
+	for i := 1; i < len(data); i++ {
+		yearWeek := data[i][0]
+
+		yearWeekParts := strings.Split(yearWeek, "-")
+		if len(yearWeekParts) != 2 {
+			return nil, fmt.Errorf("error at line %d. Bad week column", i)
+		}
+		year := vartypes.StringToInt(yearWeekParts[0])
+		week := vartypes.StringToInt(yearWeekParts[1])
+		dates := date.WeekToDateRange(year, week)
+
+		place := data[i][1]
+		percentageStr := strings.TrimRight(data[i][2], "%")
+		percentage := vartypes.StringToFloat(percentageStr)
+
+		for _, d := range dates {
+			_, ok := calc[d]
+			if !ok {
+				calc[d] = make(map[string]float64)
+			}
+			calc[d][place] = percentage
+		}
+	}
+
+	res := make(map[string]WasteInfo)
+
+	for d, waste := range calc {
+		highestPercent := float64(-100000000)
+		highestPlace := ""
+		for place, percent := range waste {
+			if percent > highestPercent {
+				highestPercent = percent
+				highestPlace = place
+			}
+		}
+		res[d.Format(simpleDateLayout)] = WasteInfo{
+			Place:      highestPlace,
+			Percentage: highestPercent,
+		}
+	}
+
+	return res, nil
 }
 
 func csvHeaderToDate(s string) (time.Time, error) {

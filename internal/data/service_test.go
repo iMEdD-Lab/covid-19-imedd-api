@@ -32,6 +32,7 @@ func (s *DataServiceSuite) SetupSuite() {
 		filepath.Join(path, "test_csv/testing_timeline.csv"),
 		filepath.Join(path, "test_csv/testing_deaths.csv"),
 		filepath.Join(path, "test_csv/testing_demographics.csv"),
+		filepath.Join(path, "test_csv/testing_waste.csv"),
 		true,
 	)
 	assert.Nil(s.T(), err)
@@ -124,6 +125,8 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRapidTests: 20,
 		EstimatedNewTotalTests: 21,
 		CasesCum:               22,
+		WasteHighestPlace:      "koukouvaounes",
+		WasteHighestPercent:    0.69,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
 		Date:                   time.Date(2020, 2, 27, 0, 0, 0, 0, time.UTC),
@@ -143,6 +146,8 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRapidTests: 20 + 22,
 		EstimatedNewTotalTests: 21 + 22,
 		CasesCum:               22 + 22,
+		WasteHighestPlace:      "koukouvaounes",
+		WasteHighestPercent:    0.69,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
 		Date:                   time.Date(2020, 2, 28, 0, 0, 0, 0, time.UTC),
@@ -162,6 +167,8 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRapidTests: 20 + 44,
 		EstimatedNewTotalTests: 21 + 44,
 		CasesCum:               22 + 44,
+		WasteHighestPlace:      "koukouvaounes",
+		WasteHighestPercent:    0.69,
 	})
 
 	assert.Nil(s.T(), s.srv.PopulateTimeline(ctx))

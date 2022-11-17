@@ -41,6 +41,8 @@ var tlFields = []string{
 	"estimated_new_rapid_tests",
 	"estimated_new_total_tests",
 	"cases_cum",
+	"waste_highest_place",
+	"waste_highest_percent",
 }
 
 type Api struct {
@@ -318,6 +320,10 @@ func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interfa
 				r[f] = fi.EstimatedNewTotalTests
 			case "cases_cum":
 				r[f] = fi.CasesCum
+			case "waste_highest_place":
+				r[f] = fi.WasteHighestPlace
+			case "waste_highest_percent":
+				r[f] = fi.WasteHighestPercent
 			default:
 				// do nothing
 			}
