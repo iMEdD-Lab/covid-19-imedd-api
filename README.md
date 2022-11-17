@@ -8,7 +8,7 @@ It is developed by Sociality in collaboration with iMEdD.
 
 By default, the application retrieves its data from these sources:
 
-- [Cases per county](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv)
+- [Cases per prefecture](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greece_cases_v2.csv)
 - [Greece Covid-19 timeline](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/greeceTimeline.csv)
 - [Deaths per municipality](https://github.com/iMEdD-Lab/open-data/blob/master/COVID-19/deaths%20covid%20greece%20municipality%2020%2021.csv)
 - [Demographic information](https://github.com/Sandbird/covid19-Greece/blob/master/demography_total_details.csv)
@@ -25,7 +25,7 @@ Here is a short description of the application's endpoints. More detailed info i
 #### Basic Endpoints
 
 - `/deaths_per_municipality`: COVID-19 deaths per Greek municipality
-- `/cases`: COVID-19 deaths per Greek county
+- `/cases`: COVID-19 deaths per Greek prefecture
 - `/timeline`: Gets full COVID-19 info for every date of a specific period
 - `/demographics`: Gets full COVID-19 demographics info for every date and for a certain age category(0-17,18-39,40-64,65+)
 
@@ -36,7 +36,7 @@ Here is a short description of the application's endpoints. More detailed info i
 
 #### Geographical Endpoints
 
-- `/counties`: Greece's county geographical information
+- `/regional_units`: Greece's prefectures geographical information
 - `/municipalities`: Greece's municipality geographical information
 
 ## How to run

@@ -27,9 +27,9 @@ paths:
               schema:
                 oneOf:
                 - $ref: '#/components/schemas/timelineFields'
-  /counties:
+  /regional_units:
     get:
-      summary: Greece's county geographical information
+      summary: Greece's prefecture geographical information
       tags:
       - geographical
       responses:
@@ -39,7 +39,7 @@ paths:
             application/json:
               schema:
                 oneOf:
-                - $ref: '#/components/schemas/counties'
+                - $ref: '#/components/schemas/regionalUnits'
   /municipalities:
     get:
       summary: Greece's municipality geographical information
@@ -58,16 +58,16 @@ paths:
                 - $ref: '#/components/schemas/municipalities'
   /cases:
     get:
-      summary: covid19 cases per county
+      summary: covid19 cases per prefecture
       tags:
       - covid19
       parameters:
       - $ref: '#/components/parameters/page'
       - $ref: '#/components/parameters/per_page'
       - in: query
-        name: county_id
+        name: regional_unit_id
         schema:
-          description: the id of a specific geographical region (see /counties endpoint)
+          description: the id of a specific geographical region (see /regional_units endpoint)
           type: integer
           example: 2
       - in: query
@@ -226,7 +226,7 @@ components:
       description: cases per municipality at a specific date
       type: object
       properties:
-        county_id:
+        regional_unit_id:
           type: integer
           example: 1
         date:
@@ -249,8 +249,8 @@ components:
         "intubated", "intubated_vac", "intubated_unvac", "hospital_admissions", "hospital_discharges",
         "estimated_new_rtpcr_tests", "estimated_new_rapid_tests", "estimated_new_total_tests"
       ]
-    county:
-      description: greek county
+    regionalUnit:
+      description: greek prefecture
       type: object
       properties:
         id:
@@ -258,7 +258,7 @@ components:
           example: 1
         slug:
           type: string
-          description: a slugged version of the normalized name of the county
+          description: a slugged version of the normalized name of the regional unit
           example: "artas"
         department:
           type: string
@@ -266,20 +266,20 @@ components:
         prefecture:
           type: string
           example: "Περιφέρεια Ηπείρου"
-        county_normalized:
+        regional_unit_normalized:
           type: string
-          description: the normalized version of the county name in greek capital letters
+          description: the normalized version of the prefecture name in greek capital letters
           example: "ΑΡΤΑΣ"
-        county:
+        regional_unit:
           type: string
           example: "Π.Ε. Άρτας"
         pop_11:
           type: integer
           example: 38473
-    counties:
+    regionalUnits:
       type: array
       items:
-        $ref: '#/components/schemas/county'
+        $ref: '#/components/schemas/regionalUnit'
     municipalities:
       type: array
       items:

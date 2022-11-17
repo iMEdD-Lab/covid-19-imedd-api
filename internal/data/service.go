@@ -60,14 +60,14 @@ type FullInfo struct {
 	WasteHighestPercent    float64   `json:"waste_highest_percent"`
 }
 
-type County struct {
-	Id               int    `json:"id"`
-	Slug             string `json:"slug"`
-	Department       string `json:"department"`
-	Prefecture       string `json:"prefecture"`
-	CountyNormalized string `json:"county_normalized"`
-	County           string `json:"county"`
-	Pop11            int    `json:"pop_11"`
+type RegionalUnit struct {
+	Id                     int    `json:"id"`
+	Slug                   string `json:"slug"`
+	Department             string `json:"department"`
+	Prefecture             string `json:"prefecture"`
+	RegionalUnitNormalized string `json:"regional_unit_normalized"`
+	RegionalUnit           string `json:"regional_unit"`
+	Pop11                  int    `json:"pop_11"`
 }
 
 type Municipality struct {
@@ -124,11 +124,11 @@ func (s *Service) PopulateEverything(ctx context.Context) error {
 	g, _ := errgroup.WithContext(ctx)
 
 	g.Go(func() error {
-		if err := s.PopulateCounties(ctx); err != nil {
+		if err := s.PopulateRegionalUnits(ctx); err != nil {
 			return fmt.Errorf("error populating geo: %s", err)
 		}
 		if err := s.PopulateCases(ctx); err != nil {
-			return fmt.Errorf("error populating cases per county: %s", err)
+			return fmt.Errorf("error populating cases per regional unit: %s", err)
 		}
 		return nil
 	})
@@ -197,7 +197,7 @@ func (s *Service) PopulateDeathsPerMunicipality(ctx context.Context) error {
 	return nil
 }
 
-func (s *Service) PopulateCounties(ctx context.Context) error {
+func (s *Service) PopulateRegionalUnits(ctx context.Context) error {
 	data, err := file.ReadCsv(s.casesCsvSrc, s.fromFiles)
 	if err != nil {
 		log.Fatalf("Error reading csv file: %v", err)
@@ -215,20 +215,20 @@ func (s *Service) PopulateCounties(ctx context.Context) error {
 	}
 
 	for _, row := range data[1:] {
-		err := s.repo.AddCounty(ctx, County{
-			Slug:             slug.Make(row[2]),
-			Department:       row[0],
-			Prefecture:       row[1],
-			CountyNormalized: row[2],
-			County:           row[3],
-			Pop11:            vartypes.StringToInt(row[4]),
+		err := s.repo.AddRegionalUnit(ctx, RegionalUnit{
+			Slug:                   slug.Make(row[2]),
+			Department:             row[0],
+			Prefecture:             row[1],
+			RegionalUnitNormalized: row[2],
+			RegionalUnit:           row[3],
+			Pop11:                  vartypes.StringToInt(row[4]),
 		})
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	log.Printf("added %d counties", len(data)-1)
+	log.Printf("added %d regional units", len(data)-1)
 
 	return nil
 }
@@ -281,7 +281,7 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 			}
 		}
 
-		log.Printf("added all cases for county %s", row[2])
+		log.Printf("added all cases for regional unit %s", row[2])
 	}
 
 	return nil

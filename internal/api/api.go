@@ -105,14 +105,14 @@ func (a *Api) initRouter() {
 		})
 
 		// helper endpoint
-		r.Get("/counties", func(w http.ResponseWriter, r *http.Request) {
-			counties, err := a.repo.GetCounties(r.Context())
+		r.Get("/regional_units", func(w http.ResponseWriter, r *http.Request) {
+			rus, err := a.repo.GetRegionalUnits(r.Context())
 			if err != nil {
 				log.Println(err)
 				a.respondError(w, r, http.StatusInternalServerError, nil)
 				return
 			}
-			a.respond200(w, r, counties, false)
+			a.respond200(w, r, rus, false)
 		})
 
 		// helper endpoint
@@ -140,7 +140,7 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, municipalities[p.start:p.end], false)
 		})
 
-		// COVID-19 deaths per Greek county
+		// COVID-19 deaths per Greek prefecture
 		r.Get("/cases", func(w http.ResponseWriter, r *http.Request) {
 			filter := casesFilter(r.URL.Query())
 			cases, err := a.repo.GetCases(r.Context(), filter)
@@ -266,14 +266,14 @@ func datesFilter(values url.Values) data.DatesFilter {
 	return f
 }
 
-// casesFilter initializes filter for cases per county
+// casesFilter initializes filter for cases per regional unit
 func casesFilter(values url.Values) data.CasesFilter {
 	f := data.CasesFilter{}
 	f.DatesFilter = datesFilter(values)
 	for k, v := range values {
 		switch k {
-		case "county_id":
-			f.CountyId = vartypes.StringToInt(v[0])
+		case "regional_unit_id":
+			f.RegionalUnitId = vartypes.StringToInt(v[0])
 		}
 	}
 

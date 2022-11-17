@@ -20,10 +20,10 @@ import (
 // Repository for storing all COVID data.
 
 type Repo interface {
-	AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error
+	AddCase(ctx context.Context, date time.Time, amount int, sluggedRegionalUnit string) error
 	AddFullInfo(ctx context.Context, fi *FullInfo) error
-	AddCounty(ctx context.Context, county County) error
-	GetCounties(ctx context.Context) ([]County, error)
+	AddRegionalUnit(ctx context.Context, rgu RegionalUnit) error
+	GetRegionalUnits(ctx context.Context) ([]RegionalUnit, error)
 	GetCases(ctx context.Context, filter CasesFilter) ([]Case, error)
 	GetFromTimeline(ctx context.Context, filter DatesFilter) ([]FullInfo, error)
 	AddYearlyDeath(ctx context.Context, munId, deaths, year int) error
@@ -49,7 +49,7 @@ type DatesFilter struct {
 
 type CasesFilter struct {
 	DatesFilter
-	CountyId int
+	RegionalUnitId int
 }
 
 type PgRepo struct {
@@ -100,10 +100,10 @@ func NewPgRepo(conn *pgxpool.Pool, municipalitiesYpesCsvFile string) (*PgRepo, e
 	}, nil
 }
 
-func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error {
-	sql := `INSERT INTO cases_per_county (county_id, date, cases) 
-            VALUES ((SELECT id FROM counties WHERE slug=$1), $2, $3) ON CONFLICT (county_id, date) DO UPDATE SET cases=$3`
-	_, err := r.conn.Exec(ctx, sql, sluggedCounty, date, amount)
+func (r *PgRepo) AddCase(ctx context.Context, date time.Time, amount int, slugged string) error {
+	sql := `INSERT INTO cases_per_regional_unit (regional_unit_id, date, cases) 
+            VALUES ((SELECT id FROM regional_units WHERE slug=$1), $2, $3) ON CONFLICT (regional_unit_id, date) DO UPDATE SET cases=$3`
+	_, err := r.conn.Exec(ctx, sql, slugged, date, amount)
 	if err != nil {
 		return fmt.Errorf("could not insert row: %v", err)
 	}
@@ -132,31 +132,31 @@ func (r *PgRepo) AddFullInfo(ctx context.Context, fi *FullInfo) error {
 	return nil
 }
 
-func (r *PgRepo) AddCounty(ctx context.Context, county County) error {
-	sql := `INSERT INTO counties (slug, department, prefecture, county_normalized, county, pop_11) 
-            VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (county_normalized) DO NOTHING`
-	_, err := r.conn.Exec(ctx, sql, county.Slug, county.Department, county.Prefecture, county.CountyNormalized,
-		county.County, county.Pop11)
+func (r *PgRepo) AddRegionalUnit(ctx context.Context, ru RegionalUnit) error {
+	sql := `INSERT INTO regional_units (slug, department, prefecture, regional_unit_normalized, regional_unit, pop_11) 
+            VALUES ($1, $2, $3, $4, $5, $6) ON CONFLICT (regional_unit_normalized) DO NOTHING`
+	_, err := r.conn.Exec(ctx, sql, ru.Slug, ru.Department, ru.Prefecture,
+		ru.RegionalUnitNormalized, ru.RegionalUnit, ru.Pop11)
 	if err != nil {
-		return fmt.Errorf("could not insert counties row: %v", err)
+		return fmt.Errorf("could not insert regional_units row: %v", err)
 	}
 
 	return nil
 }
 
-func (r *PgRepo) GetCounties(ctx context.Context) ([]County, error) {
-	sql := `SELECT id,slug,department,prefecture,county_normalized,county,pop_11 from counties`
+func (r *PgRepo) GetRegionalUnits(ctx context.Context) ([]RegionalUnit, error) {
+	sql := `SELECT id,slug,department,prefecture,regional_unit_normalized,regional_unit,pop_11 from regional_units`
 	rows, err := r.conn.Query(ctx, sql)
 	if err != nil {
-		return nil, fmt.Errorf("could not get County from db: %s", err)
+		return nil, fmt.Errorf("could not get regional unit from db: %s", err)
 	}
 
-	var res []County
+	var res []RegionalUnit
 	for rows.Next() {
-		var g County
+		var g RegionalUnit
 		if err := rows.Scan(&g.Id, &g.Slug, &g.Department, &g.Prefecture,
-			&g.CountyNormalized, &g.County, &g.Pop11); err != nil {
-			return nil, fmt.Errorf("could not scan counties row: %s", err)
+			&g.RegionalUnitNormalized, &g.RegionalUnit, &g.Pop11); err != nil {
+			return nil, fmt.Errorf("could not scan regional_units row: %s", err)
 		}
 		res = append(res, g)
 	}
@@ -182,20 +182,20 @@ func (r *PgRepo) GetMunicipalities(ctx context.Context) ([]Municipality, error) 
 }
 
 type Case struct {
-	CountyId int       `json:"county_id"`
-	Date     time.Time `json:"date"`
-	Cases    int       `json:"cases"`
+	RegionalUnitId int       `json:"regional_unit_id"`
+	Date           time.Time `json:"date"`
+	Cases          int       `json:"cases"`
 }
 
 func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, error) {
-	sql := `SELECT county_id,date,cases FROM cases_per_county WHERE 1=1 `
+	sql := `SELECT regional_unit_id,date,cases FROM cases_per_regional_unit WHERE 1=1 `
 	counter := 1
 	var args []interface{}
 
-	if filter.CountyId > 0 {
-		sql += fmt.Sprintf(" AND county_id=$%d ", counter)
+	if filter.RegionalUnitId > 0 {
+		sql += fmt.Sprintf(" AND regional_unit_id=$%d ", counter)
 		counter++
-		args = append(args, filter.CountyId)
+		args = append(args, filter.RegionalUnitId)
 	}
 
 	if !filter.StartDate.IsZero() {
@@ -220,7 +220,7 @@ func (r *PgRepo) GetCases(ctx context.Context, filter CasesFilter) ([]Case, erro
 	var res []Case
 	for rows.Next() {
 		var c Case
-		if err := rows.Scan(&c.CountyId, &c.Date, &c.Cases); err != nil {
+		if err := rows.Scan(&c.RegionalUnitId, &c.Date, &c.Cases); err != nil {
 			return nil, fmt.Errorf("could not scan cases row: %s", err)
 		}
 		res = append(res, c)

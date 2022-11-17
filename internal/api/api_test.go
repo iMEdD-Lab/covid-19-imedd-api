@@ -45,26 +45,26 @@ func (s *ApiSuite) TestHealth() {
 	assert.Equal(s.T(), 200, w.Code)
 }
 
-func (s *ApiSuite) TestGetCounties() {
-	expected := []data.County{{
-		Id:               1,
-		Slug:             "aitoloakarnanias",
-		Department:       "Στερεά Ελλάδα",
-		Prefecture:       "Περιφέρεια Δυτικής Ελλάδας",
-		CountyNormalized: "ΑΙΤΩΛΟΑΚΑΡΝΑΝΙΑΣ",
-		County:           "Π.Ε. Αιτωλοακαρνανίας",
-		Pop11:            210802,
+func (s *ApiSuite) TestGetRegionalUnits() {
+	expected := []data.RegionalUnit{{
+		Id:                     1,
+		Slug:                   "aitoloakarnanias",
+		Department:             "Στερεά Ελλάδα",
+		Prefecture:             "Περιφέρεια Δυτικής Ελλάδας",
+		RegionalUnitNormalized: "ΑΙΤΩΛΟΑΚΑΡΝΑΝΙΑΣ",
+		RegionalUnit:           "Π.Ε. Αιτωλοακαρνανίας",
+		Pop11:                  210802,
 	}, {
-		Id:               2,
-		Slug:             "argolidas",
-		Department:       "Πελοπόννησος",
-		Prefecture:       "Περιφέρεια Πελοποννήσου",
-		CountyNormalized: "ΑΡΓΟΛΙΔΑΣ",
-		County:           "Π.Ε. Αργολίδας",
-		Pop11:            97044,
+		Id:                     2,
+		Slug:                   "argolidas",
+		Department:             "Πελοπόννησος",
+		Prefecture:             "Περιφέρεια Πελοποννήσου",
+		RegionalUnitNormalized: "ΑΡΓΟΛΙΔΑΣ",
+		RegionalUnit:           "Π.Ε. Αργολίδας",
+		Pop11:                  97044,
 	}}
-	s.repo.EXPECT().GetCounties(gomock.Any()).Times(1).Return(expected, nil)
-	req, _ := http.NewRequest(http.MethodGet, "/counties", nil)
+	s.repo.EXPECT().GetRegionalUnits(gomock.Any()).Times(1).Return(expected, nil)
+	req, _ := http.NewRequest(http.MethodGet, "/regional_units", nil)
 	w := httptest.NewRecorder()
 	s.api.Router.ServeHTTP(w, req)
 	resp := w.Result()
@@ -73,10 +73,10 @@ func (s *ApiSuite) TestGetCounties() {
 	defer resp.Body.Close()
 	assert.Nil(s.T(), err)
 
-	var counties []data.County
-	err = json.Unmarshal(bodyBytes, &counties)
+	var regionalUnits []data.RegionalUnit
+	err = json.Unmarshal(bodyBytes, &regionalUnits)
 	assert.Nil(s.T(), err)
-	assert.EqualValues(s.T(), expected, counties)
+	assert.EqualValues(s.T(), expected, regionalUnits)
 }
 
 func (s *ApiSuite) TestGetMunicipalities() {
@@ -132,22 +132,22 @@ func (s *ApiSuite) TestGetDeathsPerMunicipality() {
 
 func (s *ApiSuite) TestGetCases() {
 	expected := []data.Case{{
-		CountyId: 1,
-		Date:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-		Cases:    234,
+		RegionalUnitId: 1,
+		Date:           time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Cases:          234,
 	}, {
-		CountyId: 3,
-		Date:     time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-		Cases:    45454,
+		RegionalUnitId: 3,
+		Date:           time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+		Cases:          45454,
 	}}
 	s.repo.EXPECT().GetCases(gomock.Any(), data.CasesFilter{
-		CountyId: 1,
+		RegionalUnitId: 1,
 		DatesFilter: data.DatesFilter{
 			StartDate: time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 			EndDate:   time.Date(2021, 1, 10, 0, 0, 0, 0, time.UTC),
 		},
 	}).Times(1).Return(expected, nil)
-	req, _ := http.NewRequest(http.MethodGet, "/cases?county_id=1&start_date=2021-01-01&end_date=2021-01-10", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/cases?regional_unit_id=1&start_date=2021-01-01&end_date=2021-01-10", nil)
 	w := httptest.NewRecorder()
 	s.api.Router.ServeHTTP(w, req)
 	resp := w.Result()

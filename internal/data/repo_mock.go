@@ -36,31 +36,17 @@ func (m *RepoMock) EXPECT() *RepoMockMockRecorder {
 }
 
 // AddCase mocks base method.
-func (m *RepoMock) AddCase(ctx context.Context, date time.Time, amount int, sluggedCounty string) error {
+func (m *RepoMock) AddCase(ctx context.Context, date time.Time, amount int, sluggedRegionalUnit string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCase", ctx, date, amount, sluggedCounty)
+	ret := m.ctrl.Call(m, "AddCase", ctx, date, amount, sluggedRegionalUnit)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // AddCase indicates an expected call of AddCase.
-func (mr *RepoMockMockRecorder) AddCase(ctx, date, amount, sluggedCounty interface{}) *gomock.Call {
+func (mr *RepoMockMockRecorder) AddCase(ctx, date, amount, sluggedRegionalUnit interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCase", reflect.TypeOf((*RepoMock)(nil).AddCase), ctx, date, amount, sluggedCounty)
-}
-
-// AddCounty mocks base method.
-func (m *RepoMock) AddCounty(ctx context.Context, county County) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCounty", ctx, county)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddCounty indicates an expected call of AddCounty.
-func (mr *RepoMockMockRecorder) AddCounty(ctx, county interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCounty", reflect.TypeOf((*RepoMock)(nil).AddCounty), ctx, county)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCase", reflect.TypeOf((*RepoMock)(nil).AddCase), ctx, date, amount, sluggedRegionalUnit)
 }
 
 // AddDemographicInfo mocks base method.
@@ -106,6 +92,20 @@ func (mr *RepoMockMockRecorder) AddMunicipality(ctx, name interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddMunicipality", reflect.TypeOf((*RepoMock)(nil).AddMunicipality), ctx, name)
 }
 
+// AddRegionalUnit mocks base method.
+func (m *RepoMock) AddRegionalUnit(ctx context.Context, rgu RegionalUnit) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddRegionalUnit", ctx, rgu)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddRegionalUnit indicates an expected call of AddRegionalUnit.
+func (mr *RepoMockMockRecorder) AddRegionalUnit(ctx, rgu interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddRegionalUnit", reflect.TypeOf((*RepoMock)(nil).AddRegionalUnit), ctx, rgu)
+}
+
 // AddYearlyDeath mocks base method.
 func (m *RepoMock) AddYearlyDeath(ctx context.Context, munId, deaths, year int) error {
 	m.ctrl.T.Helper()
@@ -133,21 +133,6 @@ func (m *RepoMock) GetCases(ctx context.Context, filter CasesFilter) ([]Case, er
 func (mr *RepoMockMockRecorder) GetCases(ctx, filter interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCases", reflect.TypeOf((*RepoMock)(nil).GetCases), ctx, filter)
-}
-
-// GetCounties mocks base method.
-func (m *RepoMock) GetCounties(ctx context.Context) ([]County, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCounties", ctx)
-	ret0, _ := ret[0].([]County)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCounties indicates an expected call of GetCounties.
-func (mr *RepoMockMockRecorder) GetCounties(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCounties", reflect.TypeOf((*RepoMock)(nil).GetCounties), ctx)
 }
 
 // GetDeathsPerMunicipality mocks base method.
@@ -208,4 +193,19 @@ func (m *RepoMock) GetMunicipalities(ctx context.Context) ([]Municipality, error
 func (mr *RepoMockMockRecorder) GetMunicipalities(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMunicipalities", reflect.TypeOf((*RepoMock)(nil).GetMunicipalities), ctx)
+}
+
+// GetRegionalUnits mocks base method.
+func (m *RepoMock) GetRegionalUnits(ctx context.Context) ([]RegionalUnit, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetRegionalUnits", ctx)
+	ret0, _ := ret[0].([]RegionalUnit)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetRegionalUnits indicates an expected call of GetRegionalUnits.
+func (mr *RepoMockMockRecorder) GetRegionalUnits(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetRegionalUnits", reflect.TypeOf((*RepoMock)(nil).GetRegionalUnits), ctx)
 }

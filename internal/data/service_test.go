@@ -47,37 +47,37 @@ func TestDataServiceSuite(t *testing.T) {
 	suite.Run(t, new(DataServiceSuite))
 }
 
-func (s *DataServiceSuite) TestPopulateCounties() {
+func (s *DataServiceSuite) TestPopulateRegionalUnits() {
 	ctx := context.Background()
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
-		Slug:             "county_1",
-		Department:       "Department_1",
-		Prefecture:       "Prefecture_1",
-		CountyNormalized: "County_1",
-		County:           "county_one",
-		Pop11:            10000,
+	s.repoMock.EXPECT().AddRegionalUnit(gomock.Any(), RegionalUnit{
+		Slug:                   "county_1",
+		Department:             "Department_1",
+		Prefecture:             "Prefecture_1",
+		RegionalUnitNormalized: "County_1",
+		RegionalUnit:           "county_one",
+		Pop11:                  10000,
 	})
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
-		Slug:             "county_2",
-		Department:       "Department_2",
-		Prefecture:       "Prefecture_2",
-		CountyNormalized: "County_2",
-		County:           "county_two",
-		Pop11:            20000,
+	s.repoMock.EXPECT().AddRegionalUnit(gomock.Any(), RegionalUnit{
+		Slug:                   "county_2",
+		Department:             "Department_2",
+		Prefecture:             "Prefecture_2",
+		RegionalUnitNormalized: "County_2",
+		RegionalUnit:           "county_two",
+		Pop11:                  20000,
 	})
 
-	s.repoMock.EXPECT().AddCounty(gomock.Any(), County{
-		Slug:             "county_3",
-		Department:       "Department_3",
-		Prefecture:       "Prefecture_3",
-		CountyNormalized: "County_3",
-		County:           "county_three",
-		Pop11:            30000,
+	s.repoMock.EXPECT().AddRegionalUnit(gomock.Any(), RegionalUnit{
+		Slug:                   "county_3",
+		Department:             "Department_3",
+		Prefecture:             "Prefecture_3",
+		RegionalUnitNormalized: "County_3",
+		RegionalUnit:           "county_three",
+		Pop11:                  30000,
 	})
 
-	assert.Nil(s.T(), s.srv.PopulateCounties(ctx))
+	assert.Nil(s.T(), s.srv.PopulateRegionalUnits(ctx))
 }
 
 func (s *DataServiceSuite) TestPopulateCases() {
