@@ -123,6 +123,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRtpcrTests: 18,
 		EstimatedNewRapidTests: 20,
 		EstimatedNewTotalTests: 21,
+		CasesCum:               22,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
 		Date:                   time.Date(2020, 2, 27, 0, 0, 0, 0, time.UTC),
@@ -141,6 +142,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRtpcrTests: 18 + 22,
 		EstimatedNewRapidTests: 20 + 22,
 		EstimatedNewTotalTests: 21 + 22,
+		CasesCum:               22 + 22,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
 		Date:                   time.Date(2020, 2, 28, 0, 0, 0, 0, time.UTC),
@@ -159,6 +161,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewRtpcrTests: 18 + 44,
 		EstimatedNewRapidTests: 20 + 44,
 		EstimatedNewTotalTests: 21 + 44,
+		CasesCum:               22 + 44,
 	})
 
 	assert.Nil(s.T(), s.srv.PopulateTimeline(ctx))

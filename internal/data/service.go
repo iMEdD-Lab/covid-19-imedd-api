@@ -52,6 +52,7 @@ type FullInfo struct {
 	EstimatedNewRtpcrTests int       `json:"estimated_new_rtpcr_tests"`
 	EstimatedNewRapidTests int       `json:"estimated_new_rapid_tests"`
 	EstimatedNewTotalTests int       `json:"estimated_new_total_tests"`
+	CasesCum               int       `json:"cases_cum"`
 }
 
 type County struct {
@@ -341,6 +342,8 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 				tl[key].EstimatedNewRapidTests = amount
 			case 21: //estimated_new_total_tests
 				tl[key].EstimatedNewTotalTests = amount
+			case 22: //estimated_new_total_tests
+				tl[key].CasesCum = amount
 			default:
 				// do nothing
 			}

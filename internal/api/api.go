@@ -25,7 +25,7 @@ const (
 )
 
 var tlFields = []string{
-	"cases",
+	"daily_cases",
 	"total_reinfections",
 	"deaths",
 	"deaths_cum",
@@ -40,6 +40,7 @@ var tlFields = []string{
 	"estimated_new_rtpcr_tests",
 	"estimated_new_rapid_tests",
 	"estimated_new_total_tests",
+	"cases_cum",
 }
 
 type Api struct {
@@ -285,7 +286,7 @@ func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interfa
 		r["date"] = fi.Date
 		for _, f := range fields {
 			switch f {
-			case "cases":
+			case "daily_cases":
 				r[f] = fi.Cases
 			case "total_reinfections":
 				r[f] = fi.TotalReinfections
@@ -315,6 +316,8 @@ func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interfa
 				r[f] = fi.EstimatedNewRapidTests
 			case "estimated_new_total_tests":
 				r[f] = fi.EstimatedNewTotalTests
+			case "cases_cum":
+				r[f] = fi.CasesCum
 			default:
 				// do nothing
 			}
