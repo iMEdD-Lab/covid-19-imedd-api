@@ -1,13 +1,22 @@
-test-cmd
-covid-19-api-old
+# ide files
 .idea
-greece_cases_v2.csv
-greeceTimeline.csv
+
+# test commands that do not need to be committed
+test-cmd
+
+# postgres data for docker and standalone run
 testdata
 docker-testdata
-covid19-greece-api
-todos.txt
+
+# air temporary
 tmp
+
+# csv files that do not need to be committed
+greeceTimeline.csv
+greece_cases_v2.csv
 deaths%20covid%20greece%20municipality%2020%2021.csv
 demography_total_details.csv
 viral_waste_water.csv
+
+# executable
+covid19-greece-api
