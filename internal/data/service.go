@@ -200,7 +200,7 @@ func (s *Service) PopulateDeathsPerMunicipality(ctx context.Context) error {
 func (s *Service) PopulateRegionalUnits(ctx context.Context) error {
 	data, err := file.ReadCsv(s.casesCsvSrc, s.fromFiles)
 	if err != nil {
-		log.Fatalf("Error reading csv file: %v", err)
+		return fmt.Errorf("error reading csv file: %v", err)
 	}
 
 	// take dates from csv first row
@@ -209,7 +209,7 @@ func (s *Service) PopulateRegionalUnits(ctx context.Context) error {
 	for _, header := range headers[5:] {
 		t, err := csvHeaderToDate(header)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot transform csv header %s to date: %s", header, err)
 		}
 		dateHeaders = append(dateHeaders, t)
 	}
@@ -224,7 +224,7 @@ func (s *Service) PopulateRegionalUnits(ctx context.Context) error {
 			Pop11:                  vartypes.StringToInt(row[4]),
 		})
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot add regional unit: %s", err)
 		}
 	}
 
@@ -236,7 +236,7 @@ func (s *Service) PopulateRegionalUnits(ctx context.Context) error {
 func (s *Service) PopulateCases(ctx context.Context) error {
 	data, err := file.ReadCsv(s.casesCsvSrc, s.fromFiles)
 	if err != nil {
-		log.Fatalf("Error reading csv file: %v", err)
+		return fmt.Errorf("error reading csv file: %v", err)
 	}
 
 	// take dates from csv first row
@@ -245,7 +245,7 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 	for _, header := range headers[5:] {
 		t, err := csvHeaderToDate(header)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot transform csv header %s to date: %s", header, err)
 		}
 		dateHeaders = append(dateHeaders, t)
 	}
@@ -266,7 +266,7 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 	for _, row := range data[1:] {
 		for i, date := range dateHeaders {
 			if date.IsZero() {
-				log.Fatalf("invalid date for column %d: %v", i, row[i+5])
+				return fmt.Errorf("invalid date for column %d: %v", i, row[i+5])
 			}
 			amount := vartypes.StringToInt(row[i+5])
 			if date.After(startWithoutEody) {
@@ -277,7 +277,7 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 			}
 			sl := slug.Make(row[2])
 			if err := s.repo.AddCase(ctx, date, amount, sl); err != nil {
-				log.Fatalf("Error adding death day: %v", err)
+				return fmt.Errorf("error adding death day: %v", err)
 			}
 		}
 
@@ -290,7 +290,7 @@ func (s *Service) PopulateCases(ctx context.Context) error {
 func (s *Service) PopulateTimeline(ctx context.Context) error {
 	data, err := file.ReadCsv(s.timelineCsvSrc, s.fromFiles)
 	if err != nil {
-		log.Fatalf("Error reading csv file: %v", err)
+		return fmt.Errorf("error reading csv file: %v", err)
 	}
 
 	// take dates from csv first row
@@ -299,7 +299,7 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 	for _, header := range headers[3:] {
 		t, err := csvHeaderToDate(header)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("cannot transform csv header %s to date: %s", header, err)
 		}
 		dateHeaders = append(dateHeaders, t)
 	}
@@ -315,7 +315,7 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 				}
 			}
 			if date.IsZero() {
-				log.Fatalf("invalid date for column %d: %v", i, row[i+3])
+				return fmt.Errorf("invalid date for column %d: %v", i, row[i+3])
 			}
 			amount := vartypes.StringToInt(row[i+3])
 			switch index {
@@ -392,7 +392,7 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 func (s *Service) PopulateDemographic(ctx context.Context) error {
 	data, err := file.ReadCsv(s.demographicsSrc, s.fromFiles)
 	if err != nil {
-		log.Fatalf("Error reading csv file: %s", err)
+		return fmt.Errorf("error reading csv file: %s", err)
 	}
 
 	for i := 1; i < len(data); i++ {
@@ -470,7 +470,7 @@ type WasteInfo struct {
 func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
 	data, err := file.ReadCsv(s.wasteSrc, s.fromFiles)
 	if err != nil {
-		log.Fatalf("Error reading csv file: %s", err)
+		return nil, fmt.Errorf("error reading csv file: %s", err)
 	}
 
 	calc := make(map[time.Time]map[string]float64)
