@@ -18,8 +18,6 @@ import (
 	"covid19-greece-api/pkg/vartypes"
 )
 
-// todo reduce some logs
-
 const (
 	dateLayout       = "01/02/06"
 	simpleDateLayout = "2006-01-02"
@@ -487,7 +485,7 @@ func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
 		dates := date.WeekToDateRange(year, week)
 
 		place := data[i][1]
-		percentageStr := strings.TrimRight(data[i][2], "%")
+		percentageStr := strings.TrimRight(data[i][3], "%")
 		percentage := vartypes.StringToFloat(percentageStr)
 
 		for _, d := range dates {
