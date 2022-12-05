@@ -126,6 +126,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewTotalTests: 21,
 		CasesCum:               22,
 		WasteHighestPlace:      "Κουκουβάουνες",
+		WasteHighestPlaceEn:    "koukouvaounes",
 		WasteHighestPercent:    0.69,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
@@ -147,6 +148,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewTotalTests: 21 + 22,
 		CasesCum:               22 + 22,
 		WasteHighestPlace:      "Κουκουβάουνες",
+		WasteHighestPlaceEn:    "koukouvaounes",
 		WasteHighestPercent:    0.69,
 	})
 	s.repoMock.EXPECT().AddFullInfo(gomock.Any(), &FullInfo{
@@ -168,6 +170,7 @@ func (s *DataServiceSuite) TestPopulateTimeline() {
 		EstimatedNewTotalTests: 21 + 44,
 		CasesCum:               22 + 44,
 		WasteHighestPlace:      "Κουκουβάουνες",
+		WasteHighestPlaceEn:    "koukouvaounes",
 		WasteHighestPercent:    0.69,
 	})
 

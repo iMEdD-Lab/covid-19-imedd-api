@@ -55,6 +55,7 @@ type FullInfo struct {
 	EstimatedNewTotalTests int       `json:"estimated_new_total_tests"`
 	CasesCum               int       `json:"cases_cum"`
 	WasteHighestPlace      string    `json:"waste_highest_place"`
+	WasteHighestPlaceEn    string    `json:"waste_highest_place_en"`
 	WasteHighestPercent    float64   `json:"waste_highest_percent"`
 }
 
@@ -367,6 +368,7 @@ func (s *Service) PopulateTimeline(ctx context.Context) error {
 		if ok {
 			fl.WasteHighestPercent = info.Percentage
 			fl.WasteHighestPlace = info.Place
+			fl.WasteHighestPlaceEn = info.PlaceEn
 		}
 		if err := s.repo.AddFullInfo(ctx, fl); err != nil {
 			return fmt.Errorf("cannot add full info: %s", err)
@@ -462,6 +464,7 @@ func (s *Service) PopulateDemographic(ctx context.Context) error {
 
 type WasteInfo struct {
 	Place      string
+	PlaceEn    string
 	Percentage float64
 }
 
@@ -471,7 +474,7 @@ func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
 		return nil, fmt.Errorf("error reading csv file: %s", err)
 	}
 
-	calc := make(map[time.Time]map[string]float64)
+	calc := make(map[time.Time]map[string]WasteInfo)
 
 	for i := 1; i < len(data); i++ {
 		yearWeek := data[i][0]
@@ -485,15 +488,16 @@ func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
 		dates := date.WeekToDateRange(year, week)
 
 		place := data[i][1]
+		placeEn := data[i][2]
 		percentageStr := strings.TrimRight(data[i][3], "%")
 		percentage := vartypes.StringToFloat(percentageStr)
 
 		for _, d := range dates {
 			_, ok := calc[d]
 			if !ok {
-				calc[d] = make(map[string]float64)
+				calc[d] = make(map[string]WasteInfo)
 			}
-			calc[d][place] = percentage
+			calc[d][place] = WasteInfo{Place: place, PlaceEn: placeEn, Percentage: percentage}
 		}
 	}
 
@@ -501,16 +505,18 @@ func (s *Service) GetWasteDates() (map[string]WasteInfo, error) {
 
 	for d, waste := range calc {
 		highestPercent := float64(-100000000)
-		highestPlace := ""
-		for place, percent := range waste {
-			if percent > highestPercent {
-				highestPercent = percent
-				highestPlace = place
+		var highestPlace, highestPlaceEn string
+		for _, wasteInfo := range waste {
+			if wasteInfo.Percentage > highestPercent {
+				highestPercent = wasteInfo.Percentage
+				highestPlace = wasteInfo.Place
+				highestPlaceEn = wasteInfo.PlaceEn
 			}
 		}
 		res[d.Format(simpleDateLayout)] = WasteInfo{
 			Place:      highestPlace,
 			Percentage: highestPercent,
+			PlaceEn:    highestPlaceEn,
 		}
 	}
 

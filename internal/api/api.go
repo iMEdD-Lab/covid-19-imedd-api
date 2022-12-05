@@ -322,6 +322,8 @@ func keepFields(fields []string, fullInfos []data.FullInfo) []map[string]interfa
 				r[f] = fi.CasesCum
 			case "waste_highest_place":
 				r[f] = fi.WasteHighestPlace
+			case "waste_highest_place_en":
+				r[f] = fi.WasteHighestPlaceEn
 			case "waste_highest_percent":
 				r[f] = fi.WasteHighestPercent
 			default:

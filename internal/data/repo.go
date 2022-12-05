@@ -115,16 +115,16 @@ func (r *PgRepo) AddFullInfo(ctx context.Context, fi *FullInfo) error {
 	sql := `INSERT INTO greece_timeline (date,cases,total_reinfections,deaths,deaths_cum,recovered,beds_occupancy,
 			 icu_occupancy,intubated,intubated_vac,intubated_unvac,hospital_admissions,hospital_discharges,
 			 estimated_new_rtpcr_tests,estimated_new_rapid_tests,estimated_new_total_tests,cases_cum,waste_highest_place,
-             waste_highest_percentage) 
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19) ON CONFLICT (date) DO UPDATE SET 
+             waste_highest_percentage,waste_highest_place_en) 
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20) ON CONFLICT (date) DO UPDATE SET 
            cases=$2,total_reinfections=$3,deaths=$4,deaths_cum=$5,recovered=$6,beds_occupancy=$7,icu_occupancy=$8,
            intubated=$9,intubated_vac=$10,intubated_unvac=$11,hospital_admissions=$12,hospital_discharges=$13,
            estimated_new_rtpcr_tests=$14,estimated_new_rapid_tests=$15,estimated_new_total_tests=$16,cases_cum=$17,
-           waste_highest_place=$18,waste_highest_percentage=$19`
+           waste_highest_place=$18,waste_highest_percentage=$19,waste_highest_place_en=$20`
 	_, err := r.conn.Exec(ctx, sql, fi.Date, fi.Cases, fi.TotalReinfections, fi.Deaths, fi.DeathsCum, fi.Recovered,
 		fi.BedsOccupancy, fi.IcuOccupancy, fi.Intubated, fi.IntubatedVac, fi.IntubatedUnvac, fi.HospitalAdmissions,
 		fi.HospitalDischarges, fi.EstimatedNewRtpcrTests, fi.EstimatedNewRapidTests, fi.EstimatedNewTotalTests,
-		fi.CasesCum, fi.WasteHighestPlace, fi.WasteHighestPercent)
+		fi.CasesCum, fi.WasteHighestPlace, fi.WasteHighestPercent, fi.WasteHighestPlaceEn)
 	if err != nil {
 		return fmt.Errorf("error inserting into greece_timeline table: %s", err)
 	}
@@ -233,7 +233,7 @@ func (r *PgRepo) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]Ful
 	sql := `SELECT date,cases,total_reinfections,deaths,deaths_cum,recovered,beds_occupancy,
 			 icu_occupancy,intubated,intubated_vac,intubated_unvac,hospital_admissions,hospital_discharges,
 			 estimated_new_rtpcr_tests,estimated_new_rapid_tests,estimated_new_total_tests,cases_cum,waste_highest_place,
-             waste_highest_percentage FROM greece_timeline WHERE 1=1 `
+             waste_highest_percentage,waste_highest_place_en FROM greece_timeline WHERE 1=1 `
 	var args []interface{}
 	counter := 1
 	if !filter.StartDate.IsZero() {
@@ -261,7 +261,8 @@ func (r *PgRepo) GetFromTimeline(ctx context.Context, filter DatesFilter) ([]Ful
 		if err := rows.Scan(&fi.Date, &fi.Cases, &fi.TotalReinfections, &fi.Deaths, &fi.DeathsCum, &fi.Recovered,
 			&fi.BedsOccupancy, &fi.IcuOccupancy, &fi.Intubated, &fi.IntubatedVac, &fi.IntubatedUnvac,
 			&fi.HospitalAdmissions, &fi.HospitalDischarges, &fi.EstimatedNewRtpcrTests, &fi.EstimatedNewRapidTests,
-			&fi.EstimatedNewTotalTests, &fi.CasesCum, &fi.WasteHighestPlace, &fi.WasteHighestPercent); err != nil {
+			&fi.EstimatedNewTotalTests, &fi.CasesCum, &fi.WasteHighestPlace, &fi.WasteHighestPercent,
+			&fi.WasteHighestPlaceEn); err != nil {
 			return nil, fmt.Errorf("db error scanning greece_timeline: %s", err)
 		}
 		fullInfos = append(fullInfos, fi)
