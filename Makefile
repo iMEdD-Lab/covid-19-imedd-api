@@ -11,7 +11,7 @@ build:
 
 .PHONY: container
 container: ## create docker container
-	docker build -t covidapi .
+	docker build -t p4nospet/covidapi .
 
 .PHONY: populate-db
 populate-db: ## populate the database
