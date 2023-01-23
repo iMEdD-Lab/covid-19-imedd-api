@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -77,7 +78,11 @@ func main() {
 
 	app := api.NewApi(repo)
 
-	server := &http.Server{Addr: "0.0.0.0:8080", Handler: app.Router}
+	port := env.EnvOrDefault("PORT", "8080")
+	server := &http.Server{
+		Addr:    fmt.Sprintf("0.0.0.0:%s", port),
+		Handler: app.Router,
+	}
 
 	// Server run context
 	serverCtx, serverStopCtx := context.WithCancel(context.Background())
@@ -108,7 +113,7 @@ func main() {
 	}()
 
 	// Run the server
-	log.Println("Starting COVID19 API")
+	log.Printf("Starting COVID19 API (port %s)\n", port)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("error serving: %s", err)
 	}
