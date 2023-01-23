@@ -2,6 +2,7 @@ package env
 
 import (
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -10,6 +11,15 @@ func EnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+func IntEnvOrDefault(key string, def int) int {
+	varEnv := os.Getenv(key)
+	val, err := strconv.Atoi(varEnv)
+	if err != nil {
+		return def
+	}
+	return val
 }
 
 func BoolEnvOrDefault(key string, def bool) bool {

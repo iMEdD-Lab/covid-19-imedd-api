@@ -354,7 +354,7 @@ func (s *ApiSuite) TestGetTimelineOneField() {
 
 func (s *ApiSuite) TestGetDemographics() {
 	expected := []data.DemographicInfo{{
-		Date:              time.Date(2021, 1, 1, 0, 0, 0, 0, time.Local),
+		Date:              time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
 		Category:          "0-17",
 		Cases:             1,
 		Deaths:            2,
@@ -366,7 +366,7 @@ func (s *ApiSuite) TestGetDemographics() {
 		Recovered:         8,
 		TreatedAtHome:     9,
 	}, {
-		Date:              time.Date(2021, 1, 2, 0, 0, 0, 0, time.Local),
+		Date:              time.Date(2021, 1, 2, 0, 0, 0, 0, time.UTC),
 		Category:          "18-39",
 		Cases:             10,
 		Deaths:            11,
