@@ -78,9 +78,9 @@ func main() {
 
 	app := api.NewApi(repo)
 
-	port := env.EnvOrDefault("PORT", "8080")
+	port := env.IntEnvOrDefault("PORT", 8080)
 	server := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%s", port),
+		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
 		Handler: app.Router,
 	}
 
