@@ -113,7 +113,7 @@ func main() {
 	}()
 
 	// Run the server
-	log.Printf("Starting COVID19 API (port %s)\n", port)
+	log.Printf("Starting COVID19 API (port %d)\n", port)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("error serving: %s", err)
 	}
