@@ -90,7 +90,7 @@ func (a *Api) initRouter() {
 
 	// health status
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("hello friend!!!"))
+		w.Write([]byte("hello friend."))
 		w.WriteHeader(http.StatusOK)
 	})
 
