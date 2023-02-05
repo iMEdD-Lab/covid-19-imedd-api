@@ -46,16 +46,21 @@ var tlFields = []string{
 }
 
 type Api struct {
-	Router *chi.Mux
-	repo   data.Repo
-	cache  cache.Cache
+	Router  *chi.Mux
+	repo    data.Repo
+	cache   cache.Cache
+	dataSrv *data.Service
 }
 
 // NewApi initiates and API struct
-func NewApi(repo data.Repo) *Api {
+func NewApi(
+	repo data.Repo,
+	dataSrv *data.Service,
+) *Api {
 	api := Api{
-		repo:  repo,
-		cache: cache.NewMemoryCacher(),
+		repo:    repo,
+		cache:   cache.NewMemoryCacher(),
+		dataSrv: dataSrv,
 	}
 	api.initRouter()
 
@@ -94,15 +99,9 @@ func (a *Api) initRouter() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// authentication protected routes
+	// cached routes
 	r.Group(func(r chi.Router) {
-		r.Use(a.authMw)
-
-		// same as health, but only for authenticated users
-		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("hello friend, you are authenticated!"))
-			w.WriteHeader(http.StatusOK)
-		})
+		r.Use(a.cacheMw)
 
 		// helper endpoint
 		r.Get("/regional_units", func(w http.ResponseWriter, r *http.Request) {
@@ -200,6 +199,17 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, info[p.start:p.end], false)
 		})
 
+	})
+
+	// authentication protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(a.authMw)
+
+		// same as health, but only for authenticated users
+		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello friend, you are authenticated!"))
+			w.WriteHeader(http.StatusOK)
+		})
 	})
 
 	a.Router = r

@@ -76,7 +76,7 @@ func main() {
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	app := api.NewApi(repo)
+	app := api.NewApi(repo, dataManager)
 
 	port := env.IntEnvOrDefault("PORT", 8080)
 	server := &http.Server{
