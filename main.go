@@ -76,7 +76,11 @@ func main() {
 	exit := make(chan os.Signal, 1)
 	signal.Notify(exit, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	app := api.NewApi(repo, dataManager)
+	token := os.Getenv("SECRET_TOKEN")
+	if len(token) < 10 {
+		log.Fatalf("SECRET_TOKEN too short. Please give a safe secret token")
+	}
+	app := api.NewApi(repo, dataManager, token)
 
 	port := env.IntEnvOrDefault("PORT", 8080)
 	server := &http.Server{

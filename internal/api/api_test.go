@@ -27,7 +27,20 @@ func (s *ApiSuite) SetupSuite() {
 	s.ctrl = mockCtrl
 	repo := data.NewRepoMock(s.ctrl)
 	s.repo = repo
-	s.api = NewApi(repo, &data.Service{})
+	srv, _ := data.NewService(
+		repo,
+		"../data/test_csv/testing_cases.csv",
+		"../data/test_csv/testing_timeline.csv",
+		"../data/test_csv/testing_deaths.csv",
+		"../data/test_csv/testing_demographics.csv",
+		"../data/test_csv/testing_waste.csv",
+		true,
+	)
+	s.api = NewApi(
+		repo,
+		srv,
+		"abcd",
+	)
 }
 
 func (s *ApiSuite) TearDownSuite() {

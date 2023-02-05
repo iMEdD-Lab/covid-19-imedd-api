@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -50,17 +51,20 @@ type Api struct {
 	repo    data.Repo
 	cache   cache.Cache
 	dataSrv *data.Service
+	secret  string
 }
 
 // NewApi initiates and API struct
 func NewApi(
 	repo data.Repo,
 	dataSrv *data.Service,
+	secret string,
 ) *Api {
 	api := Api{
 		repo:    repo,
 		cache:   cache.NewMemoryCacher(),
 		dataSrv: dataSrv,
+		secret:  secret,
 	}
 	api.initRouter()
 
@@ -351,7 +355,6 @@ func (a *Api) authMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := ExtractTokenFromRequest(r)
 		if err := a.Authenticate(tokenStr); err != nil {
-			log.Println(err)
 			a.respondError(w, r, http.StatusUnauthorized, ErrorResp{"unauthorized"})
 			return
 		}
@@ -361,16 +364,19 @@ func (a *Api) authMw(next http.Handler) http.Handler {
 
 func ExtractTokenFromRequest(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
-	strArr := strings.Split(bearToken, " ")
+	strArr := strings.Split(bearToken, "Bearer ")
 	if len(strArr) == 2 {
 		return strArr[1]
 	}
 	return ""
 }
 
+// Authenticate authenticates requests
 func (a *Api) Authenticate(token string) error {
-	// currently there is no authentication method used.
-	return nil
+	if token == a.secret {
+		return nil
+	}
+	return fmt.Errorf("authentication failed")
 }
 
 // cacheMw is the middleware function for caching our responses
