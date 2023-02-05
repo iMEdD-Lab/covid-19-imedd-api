@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -212,6 +213,19 @@ func (a *Api) initRouter() {
 		// same as health, but only for authenticated users
 		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("hello friend, you are authenticated!"))
+			w.WriteHeader(http.StatusOK)
+		})
+
+		// same as health, but only for authenticated users
+		r.Get("/refresh", func(w http.ResponseWriter, r *http.Request) {
+			go func() {
+				if err := a.dataSrv.PopulateEverything(context.Background()); err != nil {
+					log.Printf("data refresh failed: %v", err)
+				}
+			}()
+			if err := a.cache.Flush(); err != nil {
+				log.Printf("cache could not be flushed: %v", err)
+			}
 			w.WriteHeader(http.StatusOK)
 		})
 	})
