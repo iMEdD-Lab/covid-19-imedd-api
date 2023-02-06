@@ -13,13 +13,14 @@ services:
     restart: unless-stopped
   api:
     container_name: covid19-api
-    image: covidapi:latest
+    image: p4nospet/covidapi:latest
     environment:
       POSTGRES_DSN: "postgresql://postgres:5432/covid19?user=${POSTGRES_USER}&password=${POSTGRES_PASSWORD}&sslmode=disable"
       PORT: ":8080"
       POPULATE_DB: "true"
       MIGRATIONS_DIR: /root/migrations
       YPES_MUNICIPALITIES_CSV_FILE: /root/municipalities_ypes.csv
+      SECRET_TOKEN: ${SECRET_TOKEN}
     depends_on:
     - postgres
     ports:

@@ -1,7 +1,9 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -46,16 +48,24 @@ var tlFields = []string{
 }
 
 type Api struct {
-	Router *chi.Mux
-	repo   data.Repo
-	cache  cache.Cache
+	Router  *chi.Mux
+	repo    data.Repo
+	cache   cache.Cache
+	dataSrv *data.Service
+	secret  string
 }
 
 // NewApi initiates and API struct
-func NewApi(repo data.Repo) *Api {
+func NewApi(
+	repo data.Repo,
+	dataSrv *data.Service,
+	secret string,
+) *Api {
 	api := Api{
-		repo:  repo,
-		cache: cache.NewMemoryCacher(),
+		repo:    repo,
+		cache:   cache.NewMemoryCacher(),
+		dataSrv: dataSrv,
+		secret:  secret,
 	}
 	api.initRouter()
 
@@ -94,15 +104,9 @@ func (a *Api) initRouter() {
 		w.WriteHeader(http.StatusOK)
 	})
 
-	// authentication protected routes
+	// cached routes
 	r.Group(func(r chi.Router) {
-		r.Use(a.authMw)
-
-		// same as health, but only for authenticated users
-		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("hello friend, you are authenticated!"))
-			w.WriteHeader(http.StatusOK)
-		})
+		r.Use(a.cacheMw)
 
 		// helper endpoint
 		r.Get("/regional_units", func(w http.ResponseWriter, r *http.Request) {
@@ -200,6 +204,30 @@ func (a *Api) initRouter() {
 			a.respond200(w, r, info[p.start:p.end], false)
 		})
 
+	})
+
+	// authentication protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(a.authMw)
+
+		// same as health, but only for authenticated users
+		r.Get("/check_auth", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello friend, you are authenticated!"))
+			w.WriteHeader(http.StatusOK)
+		})
+
+		// same as health, but only for authenticated users
+		r.Get("/refresh", func(w http.ResponseWriter, r *http.Request) {
+			go func() {
+				if err := a.dataSrv.PopulateEverything(context.Background()); err != nil {
+					log.Printf("data refresh failed: %v", err)
+				}
+			}()
+			if err := a.cache.Flush(); err != nil {
+				log.Printf("cache could not be flushed: %v", err)
+			}
+			w.WriteHeader(http.StatusOK)
+		})
 	})
 
 	a.Router = r
@@ -341,7 +369,6 @@ func (a *Api) authMw(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tokenStr := ExtractTokenFromRequest(r)
 		if err := a.Authenticate(tokenStr); err != nil {
-			log.Println(err)
 			a.respondError(w, r, http.StatusUnauthorized, ErrorResp{"unauthorized"})
 			return
 		}
@@ -351,16 +378,19 @@ func (a *Api) authMw(next http.Handler) http.Handler {
 
 func ExtractTokenFromRequest(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
-	strArr := strings.Split(bearToken, " ")
+	strArr := strings.Split(bearToken, "Bearer ")
 	if len(strArr) == 2 {
 		return strArr[1]
 	}
 	return ""
 }
 
+// Authenticate authenticates requests
 func (a *Api) Authenticate(token string) error {
-	// currently there is no authentication method used.
-	return nil
+	if token == a.secret {
+		return nil
+	}
+	return fmt.Errorf("authentication failed")
 }
 
 // cacheMw is the middleware function for caching our responses
